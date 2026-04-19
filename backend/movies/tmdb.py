@@ -68,15 +68,50 @@ class TmdbClient:
         payload = self._request('/genre/movie/list', {'language': 'en-US'})
         return payload.get('genres', [])
 
-    def get_movies(self, page: int = 1, search: str = '', genre_id: str = '') -> dict:
+    def get_movies(
+        self,
+        page: int = 1,
+        search: str = '',
+        genre_id: str = '',
+        release_decade: str = '',
+        popularity: str = 'desc',
+    ) -> dict:
         params = {'page': page, 'language': 'en-US'}
         if search:
             params['query'] = search
-            return self._request('/search/movie', params)
 
-        params['sort_by'] = 'popularity.desc'
+            payload = self._request('/search/movie', params)
+            results = payload.get('results', [])
+
+            if genre_id:
+                results = [
+                    movie
+                    for movie in results
+                    if genre_id in {str(movie_genre_id) for movie_genre_id in movie.get('genre_ids', [])}
+                ]
+
+            if release_decade:
+                start_year = int(release_decade)
+                end_year = start_year + 9
+                results = [
+                    movie
+                    for movie in results
+                    if start_year <= extract_release_year(movie.get('release_date')) <= end_year
+                ]
+
+            reverse = popularity != 'asc'
+            results = sorted(results, key=lambda movie: movie.get('popularity', 0), reverse=reverse)
+            payload['results'] = results
+            payload['total_results'] = len(results)
+            return payload
+
+        params['sort_by'] = f'popularity.{"asc" if popularity == "asc" else "desc"}'
         if genre_id:
             params['with_genres'] = genre_id
+        if release_decade:
+            start_year = int(release_decade)
+            params['primary_release_date.gte'] = f'{start_year}-01-01'
+            params['primary_release_date.lte'] = f'{start_year + 9}-12-31'
         return self._request('/discover/movie', params)
 
     def get_movie_detail(self, movie_id: int) -> dict:

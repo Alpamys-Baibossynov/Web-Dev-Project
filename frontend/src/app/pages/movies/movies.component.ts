@@ -29,9 +29,29 @@ export class MoviesComponent {
   private readonly page$ = new BehaviorSubject<number>(1);
   private readonly search$ = new BehaviorSubject<string>('');
   private readonly genreId$ = new BehaviorSubject<number | null>(null);
+  private readonly releaseDecade$ = new BehaviorSubject<string>('');
+  private readonly popularity$ = new BehaviorSubject<string>('desc');
 
   search = '';
   selectedGenreId: number | null = null;
+  selectedDecade = '';
+  selectedPopularity = 'desc';
+  isGenreMenuOpen = false;
+  isDecadeMenuOpen = false;
+  isPopularityMenuOpen = false;
+  readonly decadeOptions = [
+    { value: '', label: 'All decades' },
+    { value: '2020', label: '2020s' },
+    { value: '2010', label: '2010s' },
+    { value: '2000', label: '2000s' },
+    { value: '1990', label: '1990s' },
+    { value: '1980', label: '1980s' },
+    { value: '1970', label: '1970s' },
+  ];
+  readonly popularityOptions = [
+    { value: 'desc', label: 'Most popular' },
+    { value: 'asc', label: 'Least popular' },
+  ];
 
   readonly genres$ = this.moviesService.getGenres().pipe(
     catchError(() => of([] as Genre[])),
@@ -42,10 +62,12 @@ export class MoviesComponent {
     this.page$,
     this.search$.pipe(startWith('')),
     this.genreId$.pipe(startWith(null)),
+    this.releaseDecade$.pipe(startWith('')),
+    this.popularity$.pipe(startWith('desc')),
     this.genres$,
   ]).pipe(
-    switchMap(([page, search, genreId, genres]) =>
-      this.moviesService.getMovies(page, search, genreId).pipe(
+    switchMap(([page, search, genreId, releaseDecade, popularity, genres]) =>
+      this.moviesService.getMovies(page, search, genreId, releaseDecade, popularity).pipe(
         map((response: PaginatedResponse<MovieListItem>) => ({
           movies: response.results ?? [],
           genres,
@@ -83,14 +105,31 @@ export class MoviesComponent {
 
   onGenreChange(value: number | null): void {
     this.selectedGenreId = value;
+    this.isGenreMenuOpen = false;
     this.page$.next(1);
     this.genreId$.next(value);
+  }
+
+  onDecadeChange(value: string): void {
+    this.selectedDecade = value;
+    this.isDecadeMenuOpen = false;
+    this.page$.next(1);
+    this.releaseDecade$.next(value);
+  }
+
+  onPopularityChange(value: string): void {
+    this.selectedPopularity = value;
+    this.isPopularityMenuOpen = false;
+    this.page$.next(1);
+    this.popularity$.next(value);
   }
 
   applyFilters(): void {
     this.page$.next(1);
     this.search$.next(this.search.trim());
     this.genreId$.next(this.selectedGenreId);
+    this.releaseDecade$.next(this.selectedDecade);
+    this.popularity$.next(this.selectedPopularity);
   }
 
   trackById(index: number, item: MovieListItem): number {
@@ -106,5 +145,33 @@ export class MoviesComponent {
 
   hasNextPage(currentPage: number, totalCount: number): boolean {
     return currentPage * 10 < totalCount;
+  }
+
+  toggleGenreMenu(): void {
+    this.isGenreMenuOpen = !this.isGenreMenuOpen;
+  }
+
+  toggleDecadeMenu(): void {
+    this.isDecadeMenuOpen = !this.isDecadeMenuOpen;
+  }
+
+  togglePopularityMenu(): void {
+    this.isPopularityMenuOpen = !this.isPopularityMenuOpen;
+  }
+
+  getSelectedGenreName(genres: Genre[]): string {
+    if (this.selectedGenreId === null) {
+      return 'All genres';
+    }
+
+    return genres.find((genre) => genre.id === this.selectedGenreId)?.name ?? 'All genres';
+  }
+
+  getSelectedDecadeLabel(): string {
+    return this.decadeOptions.find((option) => option.value === this.selectedDecade)?.label ?? 'All decades';
+  }
+
+  getSelectedPopularityLabel(): string {
+    return this.popularityOptions.find((option) => option.value === this.selectedPopularity)?.label ?? 'Most popular';
   }
 }

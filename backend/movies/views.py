@@ -13,10 +13,18 @@ class MovieListAPIView(generics.ListAPIView):
         page = int(request.query_params.get('page', 1))
         search = request.query_params.get('search', '').strip()
         genre_id = request.query_params.get('genres', '').strip()
+        release_decade = request.query_params.get('release_decade', '').strip()
+        popularity = request.query_params.get('popularity', 'desc').strip()
         client = TmdbClient()
         genres = client.get_genres()
         genre_lookup = {genre['id']: genre['name'] for genre in genres}
-        payload = client.get_movies(page=page, search=search, genre_id=genre_id)
+        payload = client.get_movies(
+            page=page,
+            search=search,
+            genre_id=genre_id,
+            release_decade=release_decade,
+            popularity=popularity,
+        )
         current_page = payload.get('page', 1)
         total_pages = payload.get('total_pages', 1)
         serializer = self.get_serializer(

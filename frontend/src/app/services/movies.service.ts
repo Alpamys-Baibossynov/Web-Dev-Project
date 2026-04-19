@@ -15,7 +15,13 @@ export class MoviesService {
   private apiUrl = `${API_BASE_URL}/movies/`;
   private genresApiUrl = `${API_BASE_URL}/genres/`;
 
-  getMovies(page = 1, search = '', genreId?: number | null): Observable<PaginatedResponse<MovieListItem>> {
+  getMovies(
+    page = 1,
+    search = '',
+    genreId?: number | null,
+    releaseDecade = '',
+    popularity = 'desc',
+  ): Observable<PaginatedResponse<MovieListItem>> {
     let params = new HttpParams().set('page', page);
 
     if (search.trim()) {
@@ -24,6 +30,14 @@ export class MoviesService {
 
     if (genreId) {
       params = params.set('genres', genreId);
+    }
+
+    if (releaseDecade.trim()) {
+      params = params.set('release_decade', releaseDecade.trim());
+    }
+
+    if (popularity) {
+      params = params.set('popularity', popularity);
     }
 
     return this.http.get<PaginatedResponse<MovieListItem>>(this.apiUrl, { params });

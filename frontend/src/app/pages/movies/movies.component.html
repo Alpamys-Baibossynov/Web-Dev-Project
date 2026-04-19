@@ -7,8 +7,7 @@
   </div>
 
   <section class="filters">
-    <label>
-      Search
+    <label class="filters__field filters__field--search" aria-label="Search by title">
       <input
         [ngModel]="search"
         (ngModelChange)="onSearchChange($event)"
@@ -18,17 +17,82 @@
       />
     </label>
 
-    <label>
-      Genre
-      <select [ngModel]="selectedGenreId" (ngModelChange)="onGenreChange($event)">
-        <option [ngValue]="null">All genres</option>
-        @for (genre of vm.genres; track genre.id) {
-          <option [ngValue]="genre.id">{{ genre.name }}</option>
-        }
-      </select>
-    </label>
+    <div class="genre-filter" aria-label="Genre filter">
+      <button class="genre-filter__trigger" type="button" (click)="toggleGenreMenu()">
+        <span>{{ getSelectedGenreName(vm.genres) }}</span>
+        <span class="genre-filter__caret" [class.genre-filter__caret--open]="isGenreMenuOpen"></span>
+      </button>
 
-    <button type="button" (click)="applyFilters()">Search</button>
+      @if (isGenreMenuOpen) {
+        <div class="genre-filter__menu">
+          <button
+            class="genre-chip"
+            type="button"
+            [class.genre-chip--active]="selectedGenreId === null"
+            (click)="onGenreChange(null)"
+          >
+            All genres
+          </button>
+
+          @for (genre of vm.genres; track genre.id) {
+            <button
+              class="genre-chip"
+              type="button"
+              [class.genre-chip--active]="selectedGenreId === genre.id"
+              (click)="onGenreChange(genre.id)"
+            >
+              {{ genre.name }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="filter-dropdown filters__field filters__field--compact" aria-label="Decade filter">
+      <button class="filter-dropdown__trigger" type="button" (click)="toggleDecadeMenu()">
+        <span>{{ getSelectedDecadeLabel() }}</span>
+        <span class="filter-dropdown__caret" [class.filter-dropdown__caret--open]="isDecadeMenuOpen"></span>
+      </button>
+
+      @if (isDecadeMenuOpen) {
+        <div class="filter-dropdown__menu">
+          @for (option of decadeOptions; track option.value) {
+            <button
+              class="filter-dropdown__option"
+              type="button"
+              [class.filter-dropdown__option--active]="selectedDecade === option.value"
+              (click)="onDecadeChange(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="filter-dropdown filters__field filters__field--compact" aria-label="Popularity filter">
+      <button class="filter-dropdown__trigger" type="button" (click)="togglePopularityMenu()">
+        <span>{{ getSelectedPopularityLabel() }}</span>
+        <span class="filter-dropdown__caret" [class.filter-dropdown__caret--open]="isPopularityMenuOpen"></span>
+      </button>
+
+      @if (isPopularityMenuOpen) {
+        <div class="filter-dropdown__menu">
+          @for (option of popularityOptions; track option.value) {
+            <button
+              class="filter-dropdown__option"
+              type="button"
+              [class.filter-dropdown__option--active]="selectedPopularity === option.value"
+              (click)="onPopularityChange(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <button class="filters__submit" type="button" (click)="applyFilters()">Search</button>
   </section>
 
   @if (vm.isLoading) {
