@@ -1,0 +1,57 @@
+.hero {
+  padding: clamp(2rem, 5vw, 4rem);
+  border: 1px solid var(--border);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at top right, rgba(90, 169, 255, 0.16), transparent 26%),
+    linear-gradient(180deg, rgba(21, 29, 45, 0.96), rgba(13, 19, 31, 0.98));
+  box-shadow: var(--shadow-lg);
+}
+
+.hero h1 {
+  margin-bottom: 0.8rem;
+  font-size: clamp(2.8rem, 8vw, 4.8rem);
+  line-height: 0.94;
+  color: var(--text);
+}
+
+.hero p {
+  max-width: 640px;
+  margin-bottom: 2rem;
+  color: var(--text-muted);
+  font-size: 1.05rem;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
+.hero-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.9rem 1.2rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-weight: 600;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.hero-actions a:hover {
+  transform: translateY(-1px);
+  border-color: rgba(126, 194, 255, 0.28);
+  background: rgba(90, 169, 255, 0.12);
+}
+
+@media (max-width: 768px) {
+  .hero-actions {
+    flex-direction: column;
+  }
+}

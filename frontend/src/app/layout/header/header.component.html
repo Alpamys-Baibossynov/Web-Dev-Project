@@ -1,1 +1,18 @@
-<p>header works!</p>
+<header class="site-header">
+  <nav class="site-nav">
+    <a routerLink="/" class="brand">WatchList</a>
+
+    <div class="nav-links">
+      <a routerLink="/movies" routerLinkActive="active">Movies</a>
+
+      @if (authService.isAuthenticated()) {
+        <a routerLink="/my-library" routerLinkActive="active">My Library</a>
+        <a routerLink="/profile" routerLinkActive="active">Profile</a>
+        <button type="button" (click)="logout()">Logout</button>
+      } @else {
+        <a routerLink="/login" routerLinkActive="active">Login</a>
+        <a routerLink="/register" routerLinkActive="active">Register</a>
+      }
+    </div>
+  </nav>
+</header>

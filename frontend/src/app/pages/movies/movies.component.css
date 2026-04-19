@@ -1,0 +1,42 @@
+.filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(220px, 0.6fr) auto;
+  gap: 1rem;
+  align-items: end;
+  margin-bottom: 1.6rem;
+  padding: 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: rgba(17, 24, 39, 0.9);
+  box-shadow: var(--shadow-md);
+}
+
+.movies-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 1.2rem;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  margin-top: 1.8rem;
+  color: var(--text-muted);
+}
+
+.pagination button {
+  width: auto;
+  min-width: 118px;
+}
+
+@media (max-width: 768px) {
+  .filters {
+    grid-template-columns: 1fr;
+  }
+
+  .pagination {
+    flex-direction: column;
+  }
+}

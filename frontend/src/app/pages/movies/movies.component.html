@@ -1,1 +1,55 @@
-<p>movies works!</p>
+@if (viewModel$ | async; as vm) {
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Movies</h1>
+      <p class="page-subtitle">Browse the catalog, search titles, and open movie pages with ratings, genres, and personal tracking.</p>
+    </div>
+  </div>
+
+  <section class="filters">
+    <label>
+      Search
+      <input
+        [ngModel]="search"
+        (ngModelChange)="onSearchChange($event)"
+        (keyup.enter)="applyFilters()"
+        type="text"
+        placeholder="Search by title"
+      />
+    </label>
+
+    <label>
+      Genre
+      <select [ngModel]="selectedGenreId" (ngModelChange)="onGenreChange($event)">
+        <option [ngValue]="null">All genres</option>
+        @for (genre of vm.genres; track genre.id) {
+          <option [ngValue]="genre.id">{{ genre.name }}</option>
+        }
+      </select>
+    </label>
+
+    <button type="button" (click)="applyFilters()">Search</button>
+  </section>
+
+  @if (vm.isLoading) {
+    <div class="state-card">Loading movies...</div>
+  } @else if (vm.error) {
+    <div class="state-card state-card--error">{{ vm.error }}</div>
+  } @else {
+    <div class="movies-grid">
+      @for (movie of vm.movies; track movie.id) {
+        <app-movie-card [movie]="movie"></app-movie-card>
+      }
+    </div>
+
+    <div class="pagination">
+      <button type="button" (click)="goToPage(vm.currentPage - 1)" [disabled]="vm.currentPage === 1">
+        Previous
+      </button>
+      <span>Page {{ vm.currentPage }}</span>
+      <button type="button" (click)="goToPage(vm.currentPage + 1)" [disabled]="!hasNextPage(vm.currentPage, vm.totalCount)">
+        Next
+      </button>
+    </div>
+  }
+}

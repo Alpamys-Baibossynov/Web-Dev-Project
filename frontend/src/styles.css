@@ -1,1 +1,193 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  --bg: #0b0f17;
+  --bg-elevated: #111827;
+  --surface: #151d2d;
+  --surface-soft: #1a2335;
+  --surface-strong: #202b40;
+  --border: rgba(148, 163, 184, 0.18);
+  --border-strong: rgba(148, 163, 184, 0.28);
+  --text: #eef2ff;
+  --text-muted: #9aa7bd;
+  --text-soft: #c8d2e3;
+  --accent: #5aa9ff;
+  --accent-strong: #7ec2ff;
+  --success: #37c899;
+  --danger: #f87171;
+  --shadow-lg: 0 18px 60px rgba(0, 0, 0, 0.36);
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.22);
+  --radius-lg: 22px;
+  --radius-md: 16px;
+  --radius-sm: 10px;
+  --container-width: 1180px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at top, rgba(90, 169, 255, 0.12), transparent 28%),
+    linear-gradient(180deg, #0a0f18 0%, #0b111b 48%, #090d15 100%);
+  color: var(--text);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.5;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+button, .button-link {
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 0.82rem 1.1rem;
+  background: var(--accent);
+  color: #08111d;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+button:hover, .button-link:hover {
+  background: var(--accent-strong);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(90, 169, 255, 0.24);
+}
+
+button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+input, select, textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(10, 14, 24, 0.78);
+  color: var(--text);
+  padding: 0.9rem 1rem;
+  outline: none;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted);
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: rgba(126, 194, 255, 0.55);
+  box-shadow: 0 0 0 4px rgba(90, 169, 255, 0.12);
+  background: rgba(13, 18, 30, 0.92);
+}
+
+label {
+  display: grid;
+  gap: 0.5rem;
+  color: var(--text-soft);
+  font-size: 0.95rem;
+}
+
+h1, h2, h3, h4, p {
+  margin-top: 0;
+}
+
+h1, h2, h3 {
+  letter-spacing: -0.03em;
+}
+
+p {
+  color: var(--text-soft);
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.page-title {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 2.85rem);
+  font-weight: 700;
+}
+
+.page-subtitle {
+  max-width: 640px;
+  margin: 0.35rem 0 0;
+  color: var(--text-muted);
+}
+
+.section-card, .state-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(22, 29, 44, 0.96), rgba(16, 22, 34, 0.96));
+  box-shadow: var(--shadow-md);
+}
+
+.state-card {
+  padding: 1.25rem 1.4rem;
+  text-align: center;
+  color: var(--text-soft);
+}
+
+.state-card--error {
+  border-color: rgba(248, 113, 113, 0.35);
+  color: #ffd2d2;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.36rem 0.72rem;
+  background: rgba(126, 194, 255, 0.08);
+  color: var(--text-soft);
+  font-size: 0.82rem;
+  line-height: 1;
+}
+
+.meta-text {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  button, .button-link {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -1,0 +1,59 @@
+@if (viewModel$ | async; as vm) {
+  <section class="library-page">
+    <div class="library-header">
+      <div>
+        <h1>My Library</h1>
+        <p class="page-subtitle">Track planned, watched, and abandoned movies in one clean personal shelf.</p>
+      </div>
+
+      <label>
+        Status
+        <select [ngModel]="selectedStatus" (ngModelChange)="onStatusChange($event)">
+          <option value="">All</option>
+          <option value="planned">Planned</option>
+          <option value="watched">Watched</option>
+          <option value="abandoned">Abandoned</option>
+        </select>
+      </label>
+    </div>
+
+    @if (vm.isLoading) {
+      <div class="state-card">Loading your library...</div>
+    } @else if (vm.error) {
+      <div class="state-card state-card--error">{{ vm.error }}</div>
+    } @else if (!vm.items.length) {
+      <div class="state-card">Your library is empty.</div>
+    } @else {
+      <div class="library-list">
+        @for (item of vm.items; track item.id) {
+          <article class="library-card">
+            <img
+              [src]="item.movie.poster_url || 'https://via.placeholder.com/120x180?text=No+Image'"
+              [alt]="item.movie.title"
+            />
+
+            <div class="library-card__content">
+              <h2 class="library-card__title">{{ item.movie.title }}</h2>
+              <p class="meta-text">{{ item.movie.release_year }}</p>
+              <p>
+                <span class="tag">{{ item.status }}</span>
+                @if (item.mood) {
+                  <span class="tag">{{ getMoodLabel(item.mood) }}</span>
+                }
+              </p>
+              <p class="meta-text">Rating: {{ item.rating ?? 'Not rated' }}</p>
+              <div class="library-card__actions">
+                <a class="library-card__update" [routerLink]="['/movies', item.movie.id]">
+                  Update
+                </a>
+                <button type="button" class="library-card__delete" (click)="removeFromLibrary(item.id)">
+                  Remove
+                </button>
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+}

@@ -1,0 +1,125 @@
+.library-page {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.library-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.2rem;
+}
+
+.library-header h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 2.7rem);
+}
+
+.library-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.library-card {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 120px 1fr;
+  align-items: start;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(21, 29, 45, 0.94), rgba(13, 19, 31, 0.96));
+  box-shadow: var(--shadow-md);
+}
+
+.library-card img {
+  width: 120px;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 14px;
+}
+
+.library-card__content {
+  display: grid;
+  gap: 0.5rem;
+  min-height: 100%;
+}
+
+.library-card__title {
+  margin: 0;
+  color: var(--text);
+}
+
+.library-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  margin-top: auto;
+  padding-top: 0.35rem;
+}
+
+.library-card__update,
+.library-card__delete {
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.46rem 0.78rem;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.library-card__update {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-soft);
+}
+
+.library-card__update:hover {
+  border-color: rgba(126, 194, 255, 0.26);
+  background: rgba(126, 194, 255, 0.1);
+  color: var(--text);
+  transform: none;
+}
+
+.library-card__delete {
+  background: rgba(248, 113, 113, 0.08);
+  border-color: rgba(248, 113, 113, 0.18);
+  color: #fca5a5;
+}
+
+.library-card__delete:hover {
+  background: rgba(248, 113, 113, 0.14);
+  border-color: rgba(248, 113, 113, 0.26);
+  color: #fecaca;
+  transform: none;
+}
+
+@media (max-width: 680px) {
+  .library-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .library-card {
+    grid-template-columns: 1fr;
+  }
+
+  .library-card img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 2 / 3;
+  }
+
+  .library-card__actions {
+    justify-content: stretch;
+  }
+
+  .library-card__update,
+  .library-card__delete {
+    flex: 1 1 0;
+  }
+}

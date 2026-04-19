@@ -1,1 +1,180 @@
-<p>movie-detail works!</p>
+@if (viewModel$ | async; as vm) {
+  @if (vm.isLoading) {
+    <div class="state-card">Loading movie details...</div>
+  } @else if (vm.error) {
+    <div class="state-card state-card--error">{{ vm.error }}</div>
+  } @else if (vm.movie) {
+    <section class="movie-details">
+      <div class="movie-details__poster">
+        <img
+          [src]="vm.movie.poster_url || 'https://via.placeholder.com/300x450?text=No+Image'"
+          [alt]="vm.movie.title"
+        />
+      </div>
+
+      <div class="movie-details__content">
+        <h1 class="movie-details__title">{{ vm.movie.title }}</h1>
+
+        <div class="movie-details__meta">
+          <span class="tag">{{ vm.movie.release_year }}</span>
+          @if (vm.movie.age_rating) {
+            <span class="tag">{{ vm.movie.age_rating }}</span>
+          }
+          @if (vm.movie.country) {
+            <span class="tag">{{ vm.movie.country }}</span>
+          }
+        </div>
+
+        <p class="movie-details__summary">{{ vm.movie.description }}</p>
+
+        <div class="movie-details__genres">
+          @for (genre of vm.movie.genres; track genre.id) {
+            <span class="tag">{{ genre.name }}</span>
+          }
+        </div>
+
+        <div class="movie-details__facts">
+          <article class="fact-card">
+            <p class="fact-card__label">Release year</p>
+            <p class="fact-card__value">{{ vm.movie.release_year }}</p>
+          </article>
+          <article class="fact-card">
+            <p class="fact-card__label">Duration</p>
+            <p class="fact-card__value">{{ vm.movie.duration_minutes || 'Unknown' }} min</p>
+          </article>
+          <article class="fact-card">
+            <p class="fact-card__label">Original title</p>
+            <p class="fact-card__value">{{ vm.movie.original_title || vm.movie.title }}</p>
+          </article>
+        </div>
+
+        @if (authService.isAuthenticated()) {
+          <form class="library-form" [formGroup]="libraryForm" (ngSubmit)="saveToLibrary()">
+            <div class="library-form__header">
+              <h2>Your library</h2>
+              @if (saveMessage) {
+                <p class="library-form__message">{{ saveMessage }}</p>
+              }
+            </div>
+
+            <section class="library-block">
+              <div class="library-block__top">
+                <h3>Status</h3>
+              </div>
+
+              <div class="status-picker">
+                <button
+                  type="button"
+                  class="status-pill"
+                  [class.status-pill--active]="isSelectedStatus('planned')"
+                  (click)="setStatus('planned')"
+                >
+                  Planned
+                </button>
+                <button
+                  type="button"
+                  class="status-pill"
+                  [class.status-pill--active]="isSelectedStatus('watched')"
+                  (click)="setStatus('watched')"
+                >
+                  Watched
+                </button>
+                <button
+                  type="button"
+                  class="status-pill"
+                  [class.status-pill--active]="isSelectedStatus('abandoned')"
+                  (click)="setStatus('abandoned')"
+                >
+                  Abandoned
+                </button>
+              </div>
+            </section>
+
+            <section class="library-block">
+              <div class="library-block__top">
+                <h3>Rating</h3>
+              </div>
+
+              <div class="star-rating" aria-label="Movie rating">
+                @for (star of [1, 2, 3, 4, 5]; track star) {
+                  <button
+                    type="button"
+                    class="star-button"
+                    [class.star-button--active]="isActiveStar(star)"
+                    [attr.aria-label]="'Rate ' + star + ' star' + (star > 1 ? 's' : '')"
+                    (click)="setRating(star)"
+                  >
+                    ★
+                  </button>
+                }
+              </div>
+            </section>
+
+            <section class="library-block">
+              <div class="library-block__top">
+                <h3>Mood</h3>
+              </div>
+
+              <div class="mood-picker">
+                <button
+                  type="button"
+                  class="mood-pill"
+                  [class.mood-pill--active]="isSelectedMood('excited')"
+                  (click)="setMood('excited')"
+                >
+                  {{ getMoodLabel('excited') }}
+                </button>
+                <button
+                  type="button"
+                  class="mood-pill"
+                  [class.mood-pill--active]="isSelectedMood('thoughtful')"
+                  (click)="setMood('thoughtful')"
+                >
+                  {{ getMoodLabel('thoughtful') }}
+                </button>
+                <button
+                  type="button"
+                  class="mood-pill"
+                  [class.mood-pill--active]="isSelectedMood('comforted')"
+                  (click)="setMood('comforted')"
+                >
+                  {{ getMoodLabel('comforted') }}
+                </button>
+                <button
+                  type="button"
+                  class="mood-pill"
+                  [class.mood-pill--active]="isSelectedMood('tense')"
+                  (click)="setMood('tense')"
+                >
+                  {{ getMoodLabel('tense') }}
+                </button>
+                <button
+                  type="button"
+                  class="mood-pill"
+                  [class.mood-pill--active]="isSelectedMood('sad')"
+                  (click)="setMood('sad')"
+                >
+                  {{ getMoodLabel('sad') }}
+                </button>
+                <button
+                  type="button"
+                  class="mood-pill"
+                  [class.mood-pill--active]="isSelectedMood('inspired')"
+                  (click)="setMood('inspired')"
+                >
+                  {{ getMoodLabel('inspired') }}
+                </button>
+              </div>
+            </section>
+
+            <button type="submit" [disabled]="isSubmitting">
+              {{ isSubmitting ? 'Saving...' : userMovie ? 'Update library' : 'Add to library' }}
+            </button>
+          </form>
+        } @else {
+          <div class="state-card">Login to add this movie to your library.</div>
+        }
+      </div>
+    </section>
+  }
+}

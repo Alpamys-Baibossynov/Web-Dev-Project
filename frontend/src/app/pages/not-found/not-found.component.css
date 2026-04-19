@@ -1,0 +1,25 @@
+.not-found {
+  width: min(100%, 620px);
+  margin: 3rem auto 0;
+  padding: 2rem;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(21, 29, 45, 0.96), rgba(13, 19, 31, 0.98));
+  box-shadow: var(--shadow-lg);
+}
+
+.not-found h1 {
+  margin-bottom: 0.75rem;
+}
+
+.not-found a {
+  display: inline-flex;
+  margin-top: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.85rem 1.1rem;
+  background: rgba(90, 169, 255, 0.08);
+  color: var(--text);
+  font-weight: 600;
+}

@@ -4,6 +4,26 @@ from decouple import config
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+
+def parse_debug(value):
+    if isinstance(value, bool):
+        return value
+
+    normalized = str(value).strip().lower()
+    if normalized in {'1', 'true', 'yes', 'on', 'debug', 'development', 'dev'}:
+        return True
+    if normalized in {'0', 'false', 'no', 'off', 'release', 'production', 'prod'}:
+        return False
+    return False
+
+
+def parse_bool(value):
+    if isinstance(value, bool):
+        return value
+
+    normalized = str(value).strip().lower()
+    return normalized in {'1', 'true', 'yes', 'on', 'debug', 'development', 'dev'}
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -11,7 +31,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-dev-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = config('DEBUG', default=True, cast=parse_debug)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost').split(',')
 
@@ -26,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
     'django_filters',
     'corsheaders',
     
@@ -36,13 +57,13 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -73,7 +94,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': config('POSTGRES_DB', default='watchlist_db'),
-        'USER': config('POSTGRES_USER', default='podtgres'),
+        'USER': config('POSTGRES_USER', default='postgres'),
         'PASSWORD': config('POSTGRES_PASSWORD', default='postgres'),
         'HOST': config('POSTGRES_HOST', default='localhost'),
         'PORT': config('POSTGRES_PORT', default='5432')
@@ -116,6 +137,14 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+TMDB_API_BASE_URL = config('TMDB_API_BASE_URL', default='https://api.themoviedb.org/3')
+TMDB_API_READ_ACCESS_TOKEN = config('TMDB_API_READ_ACCESS_TOKEN', default='')
+TMDB_API_KEY = config('TMDB_API_KEY', default='')
+TMDB_IMAGE_BASE_URL = config('TMDB_IMAGE_BASE_URL', default='https://image.tmdb.org/t/p/w500')
+TMDB_VERIFY_SSL = config('TMDB_VERIFY_SSL', default=True, cast=parse_bool)
+TMDB_REQUEST_TIMEOUT = config('TMDB_REQUEST_TIMEOUT', default=6, cast=int)
+TMDB_CACHE_TTL = config('TMDB_CACHE_TTL', default=1800, cast=int)
+
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:4200'
 ]
@@ -125,7 +154,12 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication'
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,

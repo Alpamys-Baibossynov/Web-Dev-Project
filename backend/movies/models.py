@@ -12,6 +12,7 @@ class Genre(models.Model):
         return self.name
     
 class Movie(models.Model):
+    tmdb_id = models.PositiveIntegerField(unique=True, null=True, blank=True)
     title = models.CharField(max_length=255)
     original_title = models.CharField(max_length=255, blank=True)
     description = models.TextField(blank=True)
@@ -36,6 +37,14 @@ class UserMovie(models.Model):
         PLANNED = 'planned', 'Planned'
         WATCHED = 'watched', 'Watched'
         ABANDONED = 'abandoned', 'Abandoned'
+
+    class Mood(models.TextChoices):
+        EXCITED = 'excited', 'Excited'
+        THOUGHTFUL = 'thoughtful', 'Thoughtful'
+        COMFORTED = 'comforted', 'Calm'
+        TENSE = 'tense', 'Tense'
+        SAD = 'sad', 'Sad'
+        INSPIRED = 'inspired', 'Inspired'
         
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -51,6 +60,11 @@ class UserMovie(models.Model):
         max_length=20,
         choices=Status.choices,
         default=Status.PLANNED,
+    )
+    mood = models.CharField(
+        max_length=20,
+        choices=Mood.choices,
+        blank=True,
     )
     rating = models.PositiveSmallIntegerField(
         null=True,

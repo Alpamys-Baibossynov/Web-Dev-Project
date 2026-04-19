@@ -1,1 +1,10 @@
-<p>profile works!</p>
+<section class="profile-page">
+  <h1>Profile</h1>
+
+  @if (authService.currentUser(); as user) {
+    <div class="profile-grid">
+      <p class="profile-item"><strong>Username:</strong> {{ user.username }}</p>
+      <p class="profile-item"><strong>Email:</strong> {{ user.email || 'Not provided' }}</p>
+    </div>
+  }
+</section>

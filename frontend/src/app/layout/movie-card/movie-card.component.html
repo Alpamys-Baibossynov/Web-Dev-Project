@@ -1,0 +1,17 @@
+<a class="movie-card" [routerLink]="['/movies', movie.id]">
+  <img
+    [src]="movie.poster_url || 'https://via.placeholder.com/300x450?text=No+Image'"
+    [alt]="movie.title"
+  />
+
+  <div class="movie-card__content">
+    <h3>{{ movie.title }}</h3>
+    <p class="movie-card__year">{{ movie.release_year }}</p>
+
+    <div class="movie-card__genres">
+      @for (genre of movie.genres; track genre.id) {
+        <span class="tag">{{ genre.name }}</span>
+      }
+    </div>
+  </div>
+</a>

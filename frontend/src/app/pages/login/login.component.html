@@ -1,1 +1,23 @@
-<p>login works!</p>
+<section class="auth-page">
+  <h1>Login</h1>
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <label>
+      Username
+      <input type="text" formControlName="username" />
+    </label>
+
+    <label>
+      Password
+      <input type="password" formControlName="password" />
+    </label>
+
+    @if (error) {
+      <p class="auth-page__error">{{ error }}</p>
+    }
+
+    <button type="submit" [disabled]="isSubmitting">
+      {{ isSubmitting ? 'Signing in...' : 'Sign in' }}
+    </button>
+  </form>
+</section>
