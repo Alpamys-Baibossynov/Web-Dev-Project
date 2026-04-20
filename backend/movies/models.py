@@ -12,7 +12,17 @@ class Genre(models.Model):
         return self.name
     
 class Movie(models.Model):
-    tmdb_id = models.PositiveIntegerField(unique=True, null=True, blank=True)
+    class MediaType(models.TextChoices):
+        MOVIE = 'movie', 'Movie'
+        TV = 'tv', 'TV Show'
+        ANIME = 'anime', 'Anime'
+
+    tmdb_id = models.PositiveIntegerField(null=True, blank=True, db_index=True)
+    media_type = models.CharField(
+        max_length=20,
+        choices=MediaType.choices,
+        default=MediaType.MOVIE,
+    )
     title = models.CharField(max_length=255)
     original_title = models.CharField(max_length=255, blank=True)
     description = models.TextField(blank=True)
@@ -28,6 +38,12 @@ class Movie(models.Model):
     
     class Meta:
         ordering = ['-release_year', 'title']
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tmdb_id", "media_type"],
+                name="unique_tmdb_media_item",
+            )
+        ]
         
     def __str__(self):
         return f'{self.title} ({self.release_year})'
@@ -35,16 +51,19 @@ class Movie(models.Model):
 class UserMovie(models.Model):
     class Status(models.TextChoices):
         PLANNED = 'planned', 'Planned'
+        CURRENTLY_WATCHING = 'currently_watching', 'Currently watching'
         WATCHED = 'watched', 'Watched'
         ABANDONED = 'abandoned', 'Abandoned'
 
     class Mood(models.TextChoices):
+        BORED = 'bored', 'Bored'
+        SCARED = 'scared', 'Scared'
         EXCITED = 'excited', 'Excited'
         THOUGHTFUL = 'thoughtful', 'Thoughtful'
+        CALM = 'calm', 'Calm'
         COMFORTED = 'comforted', 'Calm'
         TENSE = 'tense', 'Tense'
         SAD = 'sad', 'Sad'
-        INSPIRED = 'inspired', 'Inspired'
         
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,

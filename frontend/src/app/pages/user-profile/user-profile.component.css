@@ -1,0 +1,26 @@
+@import '../profile/profile.component.css';
+@import '../my-library/my-library.component.css';
+
+.profile-page--public {
+  width: min(100%, 860px);
+}
+
+.profile-avatar-button--static {
+  display: block;
+  cursor: default;
+}
+
+.public-profile__actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.2rem;
+}
+
+.public-profile__link {
+  text-decoration: none;
+}
+
+.library-header h2 {
+  margin: 0;
+  font-size: clamp(1.55rem, 3vw, 2rem);
+}

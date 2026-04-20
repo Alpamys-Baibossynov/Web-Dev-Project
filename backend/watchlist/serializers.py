@@ -9,14 +9,17 @@ from movies.tmdb import TmdbClient, sync_movie_from_tmdb
 class WatchlistMovieSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='tmdb_id', read_only=True)
     genres = GenreSerializer(many=True, read_only=True)
+    media_type = serializers.CharField(read_only=True)
 
     class Meta:
         model = Movie
         fields = [
             'id',
+            'media_type',
             'title',
             'original_title',
             'release_year',
+            'duration_minutes',
             'poster_url',
             'country',
             'age_rating',
@@ -27,6 +30,7 @@ class WatchlistMovieSerializer(serializers.ModelSerializer):
 class UserMovieSerializer(serializers.ModelSerializer):
     movie = WatchlistMovieSerializer(read_only=True)
     movie_id = serializers.IntegerField(write_only=True, required=False)
+    media_type = serializers.CharField(write_only=True, required=False, default='movie')
 
     class Meta:
         model = UserMovie
@@ -34,6 +38,7 @@ class UserMovieSerializer(serializers.ModelSerializer):
             'id',
             'movie',
             'movie_id',
+            'media_type',
             'status',
             'mood',
             'rating',
@@ -48,12 +53,13 @@ class UserMovieSerializer(serializers.ModelSerializer):
         attrs = super().validate(attrs)
         request = self.context['request']
         movie_id = attrs.pop('movie_id', None)
+        media_type = attrs.pop('media_type', getattr(getattr(self.instance, 'movie', None), 'media_type', 'movie'))
         movie = attrs.get('movie') or getattr(self.instance, 'movie', None)
 
         if movie_id is not None:
-            movie = Movie.objects.filter(tmdb_id=movie_id).first()
+            movie = Movie.objects.filter(tmdb_id=movie_id, media_type=media_type).first()
             if movie is None:
-                movie_data = TmdbClient().get_movie_detail(movie_id)
+                movie_data = TmdbClient().get_movie_detail(movie_id, media_type)
                 movie = sync_movie_from_tmdb(movie_data)
             attrs['movie'] = movie
 

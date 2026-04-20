@@ -36,7 +36,7 @@ export class RegisterComponent {
     this.authService.register(this.form.getRawValue()).subscribe({
       next: () => {
         this.isSubmitting = false;
-        this.router.navigateByUrl('/my-library');
+        this.router.navigateByUrl('/my-list');
       },
       error: () => {
         this.error = 'Registration failed. Please check the form.';

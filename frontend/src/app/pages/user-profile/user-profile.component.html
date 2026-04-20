@@ -1,0 +1,100 @@
+@if (viewModel$ | async; as vm) {
+  <section class="profile-page profile-page--public">
+    @if (vm.isLoading) {
+      <div class="state-card">Loading profile...</div>
+    } @else if (vm.error || !vm.profile) {
+      <div class="state-card state-card--error">{{ vm.error ?? 'User not found.' }}</div>
+    } @else {
+      <div class="profile-cover"></div>
+
+      <div class="profile-header">
+        <div class="profile-avatar-button profile-avatar-button--static">
+          @if (vm.profile.profile_picture_url) {
+            <img
+              class="profile-avatar"
+              [src]="vm.profile.profile_picture_url"
+              [alt]="vm.profile.username"
+            />
+          } @else {
+            <div class="profile-avatar profile-avatar--fallback">
+              {{ getUserInitials(vm.profile.username) }}
+            </div>
+          }
+        </div>
+
+        <div class="profile-header__identity">
+          <h1>{{ vm.profile.username }}</h1>
+          <p>{{ vm.profile.followers_count ?? 0 }} followers • {{ vm.profile.following_count ?? 0 }} following</p>
+          <div class="profile-stats">
+            <div class="profile-stat">
+              <strong>{{ vm.items.length }}</strong>
+              <span>Saved</span>
+            </div>
+          </div>
+          <div class="public-profile__actions">
+            @if (!isOwnProfile(vm.profile)) {
+              <button type="button" class="profile-card__toggle" (click)="toggleFollow(vm.profile)" [disabled]="isSubmitting">
+                {{ vm.profile.is_friend ? 'Friend' : vm.profile.is_following ? 'Following' : 'Follow' }}
+              </button>
+            } @else {
+              <a class="profile-card__toggle public-profile__link" routerLink="/profile">Edit profile</a>
+            }
+          </div>
+        </div>
+      </div>
+
+      <section class="profile-card">
+        <div class="library-header">
+          <div>
+            <h2>{{ vm.profile.username }}'s list</h2>
+          </div>
+
+          <label>
+            Status
+            <select [ngModel]="selectedStatus" (ngModelChange)="onStatusChange($event)">
+              <option value="">All</option>
+              @for (option of statusOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </label>
+        </div>
+
+        @if (!vm.items.length) {
+          <div class="state-card">This list is empty.</div>
+        } @else {
+          <div class="library-list">
+            @for (item of vm.items; track item.id) {
+              <article class="library-card">
+                <img
+                  [src]="item.movie.poster_url || 'https://via.placeholder.com/120x180?text=No+Image'"
+                  [alt]="item.movie.title"
+                />
+
+                <div class="library-card__content">
+                  <h2 class="library-card__title">{{ item.movie.title }}</h2>
+                  <p class="meta-text">
+                    {{ item.movie.release_year }} •
+                    {{ item.movie.media_type === 'anime' ? 'Anime' : item.movie.media_type === 'tv' ? 'TV Show' : 'Movie' }}
+                  </p>
+                  <p>
+                    <span class="tag">{{ getStatusLabel(item.status) }}</span>
+                    @if (item.mood) {
+                      <span class="tag">{{ getMoodLabel(item.mood) }}</span>
+                    }
+                  </p>
+                  <p class="meta-text">Rating: {{ item.rating ?? 'Not rated' }}</p>
+                  <div class="library-card__actions">
+                    <a class="library-card__update" [routerLink]="['/movies', item.movie.media_type, item.movie.id]">
+                      View title
+                    </a>
+                  </div>
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </section>
+    }
+  </section>
+}

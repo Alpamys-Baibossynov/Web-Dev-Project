@@ -1,0 +1,32 @@
+@if (viewModel$ | async; as vm) {
+  <section class="recommendations-page">
+    <header class="recommendations-hero">
+      <h1>Recommendations</h1>
+
+      <div class="recommendations-controls">
+        <label>
+          Media
+          <select [ngModel]="selectedMediaType" (ngModelChange)="onMediaTypeChange($event)">
+            @for (option of mediaTypeOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </label>
+      </div>
+    </header>
+
+    @if (vm.isLoading) {
+      <div class="state-card">Building your recommendations...</div>
+    } @else if (vm.error) {
+      <div class="state-card state-card--error">{{ vm.error }}</div>
+    } @else if (vm.emptyState) {
+      <div class="state-card">{{ vm.emptyState }}</div>
+    } @else {
+      <div class="recommendations-grid">
+        @for (item of vm.recommendations; track item.movie.id) {
+          <app-movie-card [movie]="item.movie"></app-movie-card>
+        }
+      </div>
+    }
+  </section>
+}

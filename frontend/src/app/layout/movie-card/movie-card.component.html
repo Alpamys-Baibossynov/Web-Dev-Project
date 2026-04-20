@@ -1,17 +1,91 @@
-<a class="movie-card" [routerLink]="['/movies', movie.id]">
-  <img
-    [src]="movie.poster_url || 'https://via.placeholder.com/300x450?text=No+Image'"
-    [alt]="movie.title"
-  />
+<article class="movie-card">
+  <button
+    class="movie-card__menu-button"
+    type="button"
+    [attr.aria-expanded]="menuOpen()"
+    aria-label="Open quick actions"
+    (click)="toggleMenu($event)"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="5.5" r="1.8"></circle>
+      <circle cx="12" cy="12" r="1.8"></circle>
+      <circle cx="12" cy="18.5" r="1.8"></circle>
+    </svg>
+  </button>
 
-  <div class="movie-card__content">
-    <h3>{{ movie.title }}</h3>
-    <p class="movie-card__year">{{ movie.release_year }}</p>
+  @if (menuOpen()) {
+    <div class="movie-card__menu" (click)="$event.stopPropagation()">
+      @if (authService.isAuthenticated()) {
+        <section class="movie-card__menu-group">
+          <p class="movie-card__menu-label">Status</p>
+          <div class="movie-card__menu-section">
+            @for (option of visibleStatusOptions; track option.value) {
+              <button
+                class="movie-card__chip"
+                type="button"
+                [class.movie-card__chip--active]="isSelectedStatus(option.value)"
+                [disabled]="isSubmitting()"
+                (click)="setStatus(option.value, $event)"
+              >
+                {{ option.label }}
+              </button>
+            }
+          </div>
+        </section>
 
-    <div class="movie-card__genres">
-      @for (genre of movie.genres; track genre.id) {
-        <span class="tag">{{ genre.name }}</span>
+        <section class="movie-card__menu-group">
+          <p class="movie-card__menu-label">Rating</p>
+          <div class="movie-card__menu-section movie-card__menu-section--stars">
+            @for (star of stars; track star) {
+              <button
+                class="movie-card__star"
+                type="button"
+                [class.movie-card__star--active]="isActiveStar(star)"
+                [disabled]="!canEditExtras()"
+                (click)="setRating(star, $event)"
+              >
+                ★
+              </button>
+            }
+          </div>
+        </section>
+
+        <section class="movie-card__menu-group">
+          <p class="movie-card__menu-label">Mood</p>
+          @for (option of visibleStatusOptions; track option.value) {
+          }
+          <div class="movie-card__menu-section">
+            @for (option of moodOptions; track option.value) {
+              <button
+                class="movie-card__chip"
+                type="button"
+                [class.movie-card__chip--active]="isSelectedMood(option.value)"
+                [disabled]="!canEditExtras()"
+                (click)="setMood(option.value, $event)"
+              >
+                {{ option.label }}
+              </button>
+            }
+          </div>
+        </section>
+      } @else {
+        <p class="movie-card__menu-note">Login to edit your list.</p>
       }
     </div>
-  </div>
-</a>
+  }
+
+  <a class="movie-card__link" [routerLink]="['/movies', movie.media_type, movie.id]">
+    <div class="movie-card__poster">
+      <img
+        [src]="movie.poster_url || 'https://via.placeholder.com/300x450?text=No+Image'"
+        [alt]="movie.title"
+        (error)="onPosterError($event)"
+      />
+    </div>
+
+    <div class="movie-card__content">
+      <h3>{{ movie.title }}</h3>
+      <p class="movie-card__year">{{ movie.release_year }}</p>
+    </div>
+  </a>
+</article>

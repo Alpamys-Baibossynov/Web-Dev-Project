@@ -18,9 +18,10 @@ export class MoviesService {
   getMovies(
     page = 1,
     search = '',
-    genreId?: number | null,
-    releaseDecade = '',
+    genreIds: number[] = [],
+    releaseDecades: string[] = [],
     popularity = 'desc',
+    mediaType = 'movie',
   ): Observable<PaginatedResponse<MovieListItem>> {
     let params = new HttpParams().set('page', page);
 
@@ -28,26 +29,34 @@ export class MoviesService {
       params = params.set('search', search.trim());
     }
 
-    if (genreId) {
-      params = params.set('genres', genreId);
+    if (genreIds.length) {
+      params = params.set('genres', genreIds.join(','));
     }
 
-    if (releaseDecade.trim()) {
-      params = params.set('release_decade', releaseDecade.trim());
+    if (releaseDecades.length) {
+      params = params.set('release_decade', releaseDecades.join(','));
     }
 
     if (popularity) {
       params = params.set('popularity', popularity);
     }
 
+    if (mediaType) {
+      params = params.set('media_type', mediaType);
+    }
+
     return this.http.get<PaginatedResponse<MovieListItem>>(this.apiUrl, { params });
   }
 
-  getMovieById(id: number): Observable<MovieDetail> {
-    return this.http.get<MovieDetail>(`${this.apiUrl}${id}/`);
+  getMovieById(id: number, mediaType = 'movie'): Observable<MovieDetail> {
+    return this.http.get<MovieDetail>(`${this.apiUrl}${id}/`, {
+      params: new HttpParams().set('media_type', mediaType),
+    });
   }
 
-  getGenres(): Observable<Genre[]> {
-    return this.http.get<Genre[]>(this.genresApiUrl);
+  getGenres(mediaType = 'movie'): Observable<Genre[]> {
+    return this.http.get<Genre[]>(this.genresApiUrl, {
+      params: new HttpParams().set('media_type', mediaType),
+    });
   }
 }

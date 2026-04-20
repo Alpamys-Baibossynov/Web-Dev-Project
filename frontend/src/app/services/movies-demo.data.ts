@@ -25,6 +25,7 @@ export const DEMO_GENRES: Genre[] = [
 export const DEMO_MOVIES: MovieDetail[] = [
   {
     id: 603,
+    media_type: 'movie',
     title: 'The Matrix',
     original_title: 'The Matrix',
     description: 'A hacker discovers the world around him is a simulated reality.',
@@ -40,6 +41,7 @@ export const DEMO_MOVIES: MovieDetail[] = [
   },
   {
     id: 155,
+    media_type: 'movie',
     title: 'The Dark Knight',
     original_title: 'The Dark Knight',
     description: 'Batman faces the Joker, a criminal mastermind who pushes Gotham into chaos.',
@@ -55,6 +57,7 @@ export const DEMO_MOVIES: MovieDetail[] = [
   },
   {
     id: 13,
+    media_type: 'movie',
     title: 'Forrest Gump',
     original_title: 'Forrest Gump',
     description: 'The life story of a kind man who keeps finding himself in extraordinary moments.',
@@ -70,6 +73,7 @@ export const DEMO_MOVIES: MovieDetail[] = [
   },
   {
     id: 27205,
+    media_type: 'movie',
     title: 'Inception',
     original_title: 'Inception',
     description: 'A skilled thief enters dreams to steal secrets and is offered one last impossible job.',
@@ -85,6 +89,7 @@ export const DEMO_MOVIES: MovieDetail[] = [
   },
   {
     id: 680,
+    media_type: 'movie',
     title: 'Pulp Fiction',
     original_title: 'Pulp Fiction',
     description: 'Interwoven crime stories collide in a sharp, stylish Los Angeles underworld.',
@@ -100,6 +105,7 @@ export const DEMO_MOVIES: MovieDetail[] = [
   },
   {
     id: 157336,
+    media_type: 'movie',
     title: 'Interstellar',
     original_title: 'Interstellar',
     description: 'Explorers travel through a wormhole in search of a new home for humanity.',

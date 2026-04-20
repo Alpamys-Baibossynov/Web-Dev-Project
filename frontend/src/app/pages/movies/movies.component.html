@@ -1,11 +1,4 @@
 @if (viewModel$ | async; as vm) {
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">Movies</h1>
-      <p class="page-subtitle">Browse the catalog, search titles, and open movie pages with ratings, genres, and personal tracking.</p>
-    </div>
-  </div>
-
   <section class="filters">
     <label class="filters__field filters__field--search" aria-label="Search by title">
       <input
@@ -17,6 +10,28 @@
       />
     </label>
 
+    <div class="filter-dropdown filters__field filters__field--compact" aria-label="Media type filter">
+      <button class="filter-dropdown__trigger" type="button" (click)="toggleMediaTypeMenu()">
+        <span>{{ getSelectedMediaTypeLabel() }}</span>
+        <span class="filter-dropdown__caret" [class.filter-dropdown__caret--open]="isMediaTypeMenuOpen"></span>
+      </button>
+
+      @if (isMediaTypeMenuOpen) {
+        <div class="filter-dropdown__menu">
+          @for (option of mediaTypeOptions; track option.value) {
+            <button
+              class="filter-dropdown__option"
+              type="button"
+              [class.filter-dropdown__option--active]="selectedMediaType === option.value"
+              (click)="onMediaTypeChange(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+
     <div class="genre-filter" aria-label="Genre filter">
       <button class="genre-filter__trigger" type="button" (click)="toggleGenreMenu()">
         <span>{{ getSelectedGenreName(vm.genres) }}</span>
@@ -26,20 +41,20 @@
       @if (isGenreMenuOpen) {
         <div class="genre-filter__menu">
           <button
-            class="genre-chip"
+            class="filter-dropdown__option"
             type="button"
-            [class.genre-chip--active]="selectedGenreId === null"
-            (click)="onGenreChange(null)"
+            [class.filter-dropdown__option--active]="!selectedGenreIds.length"
+            (click)="clearGenres()"
           >
             All genres
           </button>
 
           @for (genre of vm.genres; track genre.id) {
             <button
-              class="genre-chip"
+              class="filter-dropdown__option"
               type="button"
-              [class.genre-chip--active]="selectedGenreId === genre.id"
-              (click)="onGenreChange(genre.id)"
+              [class.filter-dropdown__option--active]="isGenreSelected(genre.id)"
+              (click)="toggleGenre(genre.id)"
             >
               {{ genre.name }}
             </button>
@@ -60,8 +75,8 @@
             <button
               class="filter-dropdown__option"
               type="button"
-              [class.filter-dropdown__option--active]="selectedDecade === option.value"
-              (click)="onDecadeChange(option.value)"
+              [class.filter-dropdown__option--active]="option.value ? isDecadeSelected(option.value) : !selectedDecades.length"
+              (click)="option.value ? toggleDecade(option.value) : clearDecades()"
             >
               {{ option.label }}
             </button>
@@ -107,13 +122,32 @@
     </div>
 
     <div class="pagination">
-      <button type="button" (click)="goToPage(vm.currentPage - 1)" [disabled]="vm.currentPage === 1">
-        Previous
-      </button>
-      <span>Page {{ vm.currentPage }}</span>
-      <button type="button" (click)="goToPage(vm.currentPage + 1)" [disabled]="!hasNextPage(vm.currentPage, vm.totalCount)">
-        Next
-      </button>
+      <div class="pagination__main">
+        <button type="button" (click)="goToPage(vm.currentPage - 1)" [disabled]="vm.currentPage === 1">
+          Previous
+        </button>
+        <span class="pagination__status">Page {{ vm.currentPage }} of {{ vm.totalPages || 1 }}</span>
+        <button type="button" (click)="goToPage(vm.currentPage + 1)" [disabled]="!hasNextPage(vm.currentPage, vm.totalCount)">
+          Next
+        </button>
+      </div>
+
+      <div class="pagination__jump">
+        <label aria-label="Go to page">
+          <span>Go to</span>
+          <input
+            [ngModel]="pageJumpValue"
+            (ngModelChange)="onPageJumpChange($event)"
+            (keyup.enter)="jumpToPage(vm.totalPages)"
+            type="number"
+            min="1"
+            [max]="vm.totalPages || 1"
+          />
+        </label>
+        <button class="pagination__go" type="button" (click)="jumpToPage(vm.totalPages)" [disabled]="!vm.totalPages">
+          Go
+        </button>
+      </div>
     </div>
   }
 }

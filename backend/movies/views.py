@@ -2,7 +2,7 @@ from rest_framework import generics
 from rest_framework.response import Response
 
 from .models import Movie
-from .serializers import GenreSerializer, TmdbMovieDetailSerializer, TmdbMovieListSerializer
+from .serializers import TmdbMovieDetailSerializer, TmdbMovieListSerializer
 from .tmdb import TmdbClient, sync_movie_from_tmdb
 
 class MovieListAPIView(generics.ListAPIView):
@@ -15,8 +15,9 @@ class MovieListAPIView(generics.ListAPIView):
         genre_id = request.query_params.get('genres', '').strip()
         release_decade = request.query_params.get('release_decade', '').strip()
         popularity = request.query_params.get('popularity', 'desc').strip()
+        media_type = request.query_params.get('media_type', 'movie').strip() or 'movie'
         client = TmdbClient()
-        genres = client.get_genres()
+        genres = client.get_genres(media_type)
         genre_lookup = {genre['id']: genre['name'] for genre in genres}
         payload = client.get_movies(
             page=page,
@@ -24,6 +25,7 @@ class MovieListAPIView(generics.ListAPIView):
             genre_id=genre_id,
             release_decade=release_decade,
             popularity=popularity,
+            media_type=media_type,
         )
         current_page = payload.get('page', 1)
         total_pages = payload.get('total_pages', 1)
@@ -46,13 +48,13 @@ class MovieDetailAPIView(generics.RetrieveAPIView):
     serializer_class = TmdbMovieDetailSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        movie_data = TmdbClient().get_movie_detail(kwargs['pk'])
+        media_type = request.query_params.get('media_type', 'movie').strip() or 'movie'
+        movie_data = TmdbClient().get_movie_detail(kwargs['pk'], media_type)
         sync_movie_from_tmdb(movie_data)
         serializer = self.get_serializer(movie_data)
         return Response(serializer.data)
     
 class GenreListAPIView(generics.ListAPIView):
-    serializer_class = GenreSerializer
-
     def list(self, request, *args, **kwargs):
-        return Response(TmdbClient().get_genres())
+        media_type = request.query_params.get('media_type', 'movie').strip() or 'movie'
+        return Response(TmdbClient().get_genres(media_type))

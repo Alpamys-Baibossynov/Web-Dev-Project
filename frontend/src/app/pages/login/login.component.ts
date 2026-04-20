@@ -35,7 +35,7 @@ export class LoginComponent {
     this.authService.login(this.form.getRawValue()).subscribe({
       next: () => {
         this.isSubmitting = false;
-        this.router.navigateByUrl('/my-library');
+        this.router.navigateByUrl('/my-list');
       },
       error: () => {
         this.error = 'Login failed. Check your username and password.';

@@ -2,27 +2,26 @@
   <section class="library-page">
     <div class="library-header">
       <div>
-        <h1>My Library</h1>
-        <p class="page-subtitle">Track planned, watched, and abandoned movies in one clean personal shelf.</p>
+        <h1>My list</h1>
       </div>
 
       <label>
         Status
         <select [ngModel]="selectedStatus" (ngModelChange)="onStatusChange($event)">
           <option value="">All</option>
-          <option value="planned">Planned</option>
-          <option value="watched">Watched</option>
-          <option value="abandoned">Abandoned</option>
+          @for (option of statusOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
         </select>
       </label>
     </div>
 
     @if (vm.isLoading) {
-      <div class="state-card">Loading your library...</div>
+      <div class="state-card">Loading your list...</div>
     } @else if (vm.error) {
       <div class="state-card state-card--error">{{ vm.error }}</div>
     } @else if (!vm.items.length) {
-      <div class="state-card">Your library is empty.</div>
+      <div class="state-card">Your list is empty.</div>
     } @else {
       <div class="library-list">
         @for (item of vm.items; track item.id) {
@@ -34,16 +33,19 @@
 
             <div class="library-card__content">
               <h2 class="library-card__title">{{ item.movie.title }}</h2>
-              <p class="meta-text">{{ item.movie.release_year }}</p>
+              <p class="meta-text">
+                {{ item.movie.release_year }} •
+                {{ item.movie.media_type === 'anime' ? 'Anime' : item.movie.media_type === 'tv' ? 'TV Show' : 'Movie' }}
+              </p>
               <p>
-                <span class="tag">{{ item.status }}</span>
+                <span class="tag">{{ getStatusLabel(item.status) }}</span>
                 @if (item.mood) {
                   <span class="tag">{{ getMoodLabel(item.mood) }}</span>
                 }
               </p>
               <p class="meta-text">Rating: {{ item.rating ?? 'Not rated' }}</p>
               <div class="library-card__actions">
-                <a class="library-card__update" [routerLink]="['/movies', item.movie.id]">
+                <a class="library-card__update" [routerLink]="['/movies', item.movie.media_type, item.movie.id]">
                   Update
                 </a>
                 <button type="button" class="library-card__delete" (click)="removeFromLibrary(item.id)">

@@ -1,13 +1,14 @@
 import { MovieListItem } from './movie-list-item.interface';
 
-export type UserMovieStatus = 'planned' | 'watched' | 'abandoned';
+export type UserMovieStatus = 'planned' | 'currently_watching' | 'watched' | 'abandoned';
 export type UserMovieMood =
+  | 'bored'
+  | 'scared'
   | 'excited'
   | 'thoughtful'
-  | 'comforted'
+  | 'calm'
   | 'tense'
-  | 'sad'
-  | 'inspired';
+  | 'sad';
 
 export interface UserMovie {
   id: number;

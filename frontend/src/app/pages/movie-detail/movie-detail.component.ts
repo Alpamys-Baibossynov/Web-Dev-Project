@@ -1,6 +1,7 @@
 import { AsyncPipe, CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
@@ -23,26 +24,46 @@ interface MovieDetailViewModel {
   styleUrl: './movie-detail.component.css',
 })
 export class MovieDetailComponent {
+  readonly moodOptions: Array<{ value: UserMovieMood; label: string }> = [
+    { value: 'bored', label: 'Bored' },
+    { value: 'scared', label: 'Scared' },
+    { value: 'excited', label: 'Excited' },
+    { value: 'thoughtful', label: 'Thoughtful' },
+    { value: 'calm', label: 'Calm' },
+    { value: 'tense', label: 'Tense' },
+    { value: 'sad', label: 'Sad' },
+  ];
+  readonly statusOptions = [
+    { value: 'planned', label: 'Planned' },
+    { value: 'currently_watching', label: 'Currently watching', mediaTypes: ['tv', 'anime'] as Array<'tv' | 'anime' | 'movie'> },
+    { value: 'watched', label: 'Watched' },
+    { value: 'abandoned', label: 'Abandoned' },
+  ] as const;
   private route = inject(ActivatedRoute);
   private formBuilder = inject(FormBuilder);
   private moviesService = inject(MoviesService);
   private watchlistService = inject(WatchlistService);
+  private titleService = inject(Title);
   readonly authService = inject(AuthService);
 
   movie: MovieDetail | null = null;
+  mediaType: 'movie' | 'tv' | 'anime' = 'movie';
   userMovie: UserMovie | null = null;
   saveMessage: string | null = null;
   isSubmitting = false;
 
   readonly libraryForm = this.formBuilder.group({
-    status: this.formBuilder.nonNullable.control<UserMovieStatus>('planned', Validators.required),
+    status: this.formBuilder.control<UserMovieStatus | null>(null),
     mood: this.formBuilder.nonNullable.control<UserMovieMood | ''>(''),
     rating: [null as number | null],
   });
 
   readonly viewModel$: Observable<MovieDetailViewModel> = this.route.paramMap.pipe(
-    map((params) => Number(params.get('id'))),
-    switchMap((id) => {
+    map((params) => ({
+      id: Number(params.get('id')),
+      mediaType: (params.get('mediaType') ?? 'movie') as 'movie' | 'tv' | 'anime',
+    })),
+    switchMap(({ id, mediaType }) => {
       if (!id) {
         return of({
           movie: null,
@@ -51,11 +72,13 @@ export class MovieDetailComponent {
         });
       }
 
-      return this.moviesService.getMovieById(id).pipe(
+      this.mediaType = mediaType;
+      return this.moviesService.getMovieById(id, mediaType).pipe(
         map((movie) => {
           this.movie = movie;
+          this.titleService.setTitle(movie.title);
           if (this.authService.isAuthenticated()) {
-            this.loadUserMovie(movie.id);
+            this.loadUserMovie(movie.id, movie.media_type);
           }
           return {
             movie,
@@ -64,18 +87,21 @@ export class MovieDetailComponent {
           };
         }),
         catchError(() =>
-          of({
-            movie: null,
-            isLoading: false,
-            error: 'Failed to load movie',
-          }),
+          of((() => {
+            this.titleService.setTitle('Title Details');
+            return {
+              movie: null,
+              isLoading: false,
+              error: 'Failed to load title',
+            };
+          })()),
         ),
       );
     }),
   );
 
-  loadUserMovie(movieId: number): void {
-    this.watchlistService.getUserMovieForMovie(movieId).subscribe({
+  loadUserMovie(movieId: number, mediaType: 'movie' | 'tv' | 'anime'): void {
+    this.watchlistService.getUserMovieForMovie(movieId, mediaType).subscribe({
       next: (userMovie) => {
         this.userMovie = userMovie;
         if (userMovie) {
@@ -84,56 +110,129 @@ export class MovieDetailComponent {
             mood: userMovie.mood,
             rating: userMovie.rating,
           });
+        } else {
+          this.libraryForm.patchValue({
+            status: null,
+            mood: '',
+            rating: null,
+          });
         }
       },
     });
   }
 
-  saveToLibrary(): void {
-    if (!this.movie || this.libraryForm.invalid) {
-      this.libraryForm.markAllAsTouched();
+  saveStatus(status: UserMovieStatus): void {
+    if (this.userMovie?.status === status) {
+      this.removeFromList();
+      return;
+    }
+
+    this.libraryForm.patchValue({ status });
+    this.persistSelection({ status });
+  }
+
+  saveRating(rating: number): void {
+    if (!this.userMovie) {
+      return;
+    }
+
+    const nextRating = this.libraryForm.get('rating')?.value === rating ? null : rating;
+    this.libraryForm.patchValue({ rating: nextRating });
+    this.persistSelection({ rating: nextRating });
+  }
+
+  saveMood(mood: UserMovieMood): void {
+    if (!this.userMovie) {
+      return;
+    }
+
+    const nextMood = this.libraryForm.get('mood')?.value === mood ? '' : mood;
+    this.libraryForm.patchValue({ mood: nextMood });
+    this.persistSelection({ mood: nextMood });
+  }
+
+  private persistSelection(payload: {
+    status?: UserMovieStatus;
+    mood?: UserMovieMood | '';
+    rating?: number | null;
+  }): void {
+    if (!this.movie) {
       return;
     }
 
     this.isSubmitting = true;
     this.saveMessage = null;
 
-    const formValue = this.libraryForm.getRawValue();
-    const payload = {
-      status: formValue.status,
-      mood: formValue.mood,
-      rating: formValue.rating ? Number(formValue.rating) : null,
-    };
+    let request$: ReturnType<WatchlistService['updateUserMovie']> | null = null;
 
-    const request$ = this.userMovie
-      ? this.watchlistService.updateUserMovie(this.userMovie.id, payload)
-      : this.watchlistService.addToLibrary({
+    if (this.userMovie) {
+      request$ = this.watchlistService.updateUserMovie(this.userMovie.id, payload);
+    } else if (payload.status) {
+      request$ = this.watchlistService.addToLibrary(
+        {
           movie_id: this.movie.id,
-          ...payload,
-        }, this.movie);
+          media_type: this.movie.media_type,
+          status: payload.status,
+          mood: payload.mood,
+          rating: payload.rating,
+        },
+        this.movie,
+      );
+    }
+
+    if (!request$) {
+      this.isSubmitting = false;
+      return;
+    }
 
     request$.subscribe({
       next: (userMovie) => {
         this.userMovie = userMovie;
-        this.saveMessage = 'Library updated.';
+        this.libraryForm.patchValue({
+          status: userMovie.status,
+          mood: userMovie.mood,
+          rating: userMovie.rating,
+        });
         this.isSubmitting = false;
       },
       error: () => {
-        this.saveMessage = 'Could not save this movie right now.';
+        this.saveMessage = 'Could not save this title right now.';
+        this.isSubmitting = false;
+      },
+    });
+  }
+
+  private removeFromList(): void {
+    if (!this.userMovie) {
+      return;
+    }
+
+    this.isSubmitting = true;
+    this.saveMessage = null;
+
+    this.watchlistService.deleteUserMovie(this.userMovie.id).subscribe({
+      next: () => {
+        this.userMovie = null;
+        this.libraryForm.patchValue({
+          status: null,
+          mood: '',
+          rating: null,
+        });
+        this.isSubmitting = false;
+      },
+      error: () => {
+        this.saveMessage = 'Could not save this title right now.';
         this.isSubmitting = false;
       },
     });
   }
 
   setStatus(status: UserMovieStatus): void {
-    this.libraryForm.patchValue({ status });
+    this.saveStatus(status);
   }
 
   setRating(rating: number): void {
-    const currentRating = this.libraryForm.get('rating')?.value;
-    this.libraryForm.patchValue({
-      rating: currentRating === rating ? null : rating,
-    });
+    this.saveRating(rating);
   }
 
   isSelectedStatus(status: UserMovieStatus): boolean {
@@ -141,10 +240,13 @@ export class MovieDetailComponent {
   }
 
   setMood(mood: UserMovieMood): void {
-    const currentMood = this.libraryForm.get('mood')?.value;
-    this.libraryForm.patchValue({
-      mood: currentMood === mood ? '' : mood,
-    });
+    this.saveMood(mood);
+  }
+
+  get visibleStatusOptions(): ReadonlyArray<(typeof this.statusOptions)[number]> {
+    return this.statusOptions.filter(
+      (option) => !('mediaTypes' in option) || option.mediaTypes.includes(this.mediaType),
+    );
   }
 
   isSelectedMood(mood: UserMovieMood): boolean {
@@ -153,18 +255,51 @@ export class MovieDetailComponent {
 
   getMoodLabel(mood: UserMovieMood): string {
     const moodLabels: Record<UserMovieMood, string> = {
+      bored: 'Bored',
+      scared: 'Scared',
       excited: 'Excited',
       thoughtful: 'Thoughtful',
-      comforted: 'Calm',
+      calm: 'Calm',
       tense: 'Tense',
       sad: 'Sad',
-      inspired: 'Inspired',
     };
 
     return moodLabels[mood];
   }
 
+  getStatusLabel(status: UserMovieStatus): string {
+    return this.statusOptions.find((option) => option.value === status)?.label ?? status;
+  }
+
   isActiveStar(star: number): boolean {
     return (this.libraryForm.get('rating')?.value ?? 0) >= star;
+  }
+
+  canEditExtras(): boolean {
+    return !!this.userMovie && !this.isSubmitting;
+  }
+
+  get mediaLabel(): string {
+    if (this.movie?.media_type === 'anime') {
+      return 'Anime';
+    }
+    if (this.movie?.media_type === 'tv') {
+      return 'TV Show';
+    }
+    return 'Movie';
+  }
+
+  get releaseYearLabel(): string {
+    return this.movie?.media_type === 'movie' ? 'Release year' : 'First aired';
+  }
+
+  get durationLabel(): string {
+    if (this.movie?.media_type === 'anime') {
+      return 'Episode length';
+    }
+    if (this.movie?.media_type === 'tv') {
+      return 'Episode runtime';
+    }
+    return 'Duration';
   }
 }

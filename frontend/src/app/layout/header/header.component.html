@@ -1,12 +1,11 @@
 <header class="site-header">
   <nav class="site-nav">
-    <a routerLink="/" class="brand">WatchList</a>
+    <a routerLink="/movies" [queryParams]="brandQueryParams" class="brand">WatchList</a>
 
     <div class="nav-links">
-      <a routerLink="/movies" routerLinkActive="active">Movies</a>
-
       @if (authService.isAuthenticated()) {
-        <a routerLink="/my-library" routerLinkActive="active">My Library</a>
+        <a routerLink="/my-list" routerLinkActive="active">My list</a>
+        <a routerLink="/recommendations" routerLinkActive="active">Recommendations</a>
         <a routerLink="/profile" routerLinkActive="active">Profile</a>
         <button type="button" (click)="logout()">Logout</button>
       } @else {

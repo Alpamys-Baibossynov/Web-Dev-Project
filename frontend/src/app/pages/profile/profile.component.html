@@ -1,10 +1,210 @@
 <section class="profile-page">
-  <h1>Profile</h1>
-
   @if (authService.currentUser(); as user) {
-    <div class="profile-grid">
-      <p class="profile-item"><strong>Username:</strong> {{ user.username }}</p>
-      <p class="profile-item"><strong>Email:</strong> {{ user.email || 'Not provided' }}</p>
+    {{ resetProfilePictureState() }}
+
+    <div class="profile-cover"></div>
+
+    <div class="profile-header">
+      <input
+        #avatarInput
+        class="profile-avatar-input"
+        type="file"
+        accept="image/*"
+        (change)="onProfilePictureSelected($event)"
+      />
+
+      <button class="profile-avatar-button" type="button" (click)="updateAvatarFromClick(avatarInput)">
+        @if (user.profile_picture_url && !imageLoadFailed) {
+          <img
+            class="profile-avatar"
+            [src]="user.profile_picture_url"
+            [alt]="user.username"
+            (error)="onImageError()"
+          />
+        } @else {
+          <div class="profile-avatar profile-avatar--fallback">
+            {{ getUserInitials(user.username) }}
+          </div>
+        }
+      </button>
+
+      <div class="profile-header__identity">
+        <h1>{{ user.username }}</h1>
+        <p>{{ user.email || 'No email yet' }}</p>
+        <div class="public-profile__actions">
+          <a class="profile-card__toggle public-profile__link" [routerLink]="['/users', user.username]">View public profile</a>
+        </div>
+        <div class="profile-stats">
+          <div class="profile-stat">
+            <strong>{{ libraryStats.watched }}</strong>
+            <span>Watched</span>
+          </div>
+          <div class="profile-stat">
+            <strong>{{ libraryStats.planned }}</strong>
+            <span>Planned</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    @if (uploadError) {
+      <p class="profile-feedback profile-feedback--error">{{ uploadError }}</p>
+    }
+
+    @if (profileMessage) {
+      <p class="profile-feedback">{{ profileMessage }}</p>
+    }
+
+    <section class="profile-card">
+      <div class="profile-card__header">
+        <h2>People</h2>
+      </div>
+
+      <div class="people-search">
+        <label>
+          Search users
+          <input type="text" [value]="userSearch" (input)="userSearch = $any($event.target).value" placeholder="Search by username" />
+        </label>
+        <button type="button" class="profile-card__toggle" (click)="searchForUsers()">
+          Search
+        </button>
+      </div>
+
+      @if (isSearchingUsers) {
+        <p class="profile-feedback">Searching...</p>
+      } @else if (searchMessage) {
+        <p class="profile-feedback">{{ searchMessage }}</p>
+      } @else if (foundUsers.length) {
+        <div class="people-results">
+          @for (foundUser of foundUsers; track foundUser.id) {
+            <article class="people-card">
+              <a class="people-card__link" [routerLink]="['/users', foundUser.username]">
+                @if (foundUser.profile_picture_url) {
+                  <img class="people-card__avatar" [src]="foundUser.profile_picture_url" [alt]="foundUser.username" />
+                } @else {
+                  <div class="people-card__avatar people-card__avatar--fallback">
+                    {{ getUserInitials(foundUser.username) }}
+                  </div>
+                }
+                <div class="people-card__meta">
+                  <strong>{{ foundUser.username }}</strong>
+                  <span>{{ foundUser.followers_count ?? 0 }} followers</span>
+                </div>
+              </a>
+
+              <button type="button" class="profile-card__toggle" (click)="toggleFollowUser(foundUser)" [disabled]="isFollowSubmitting">
+                {{ getRelationshipLabel(foundUser) }}
+              </button>
+            </article>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="profile-card profile-card--portrait">
+      <div class="profile-card__header profile-card__header--stacked">
+        <h2>Super Smart Analytics</h2>
+      </div>
+
+      <div class="analytics-grid">
+        <div class="analytics-card analytics-card--wide">
+          <span class="analytics-card__label">Emotional portrait</span>
+          <strong>{{ analytics.emotionalPortrait }}</strong>
+        </div>
+
+        <div class="analytics-card">
+          <span class="analytics-card__label">Time spent</span>
+          <strong>{{ analytics.timeSpent }}</strong>
+        </div>
+
+        <div class="analytics-card">
+          <span class="analytics-card__label">Average rating</span>
+          <strong>{{ analytics.averageRating }}</strong>
+        </div>
+
+        <div class="analytics-card">
+          <span class="analytics-card__label">Favorite genre</span>
+          <strong>{{ analytics.favoriteGenre }}</strong>
+        </div>
+
+        <div class="analytics-card">
+          <span class="analytics-card__label">Dominant mood</span>
+          <strong>{{ analytics.dominantMood }}</strong>
+        </div>
+
+        <div class="analytics-card">
+          <span class="analytics-card__label">Media citizenship</span>
+          <strong>{{ analytics.mediaCitizenship }}</strong>
+        </div>
+
+        <div class="analytics-card">
+          <span class="analytics-card__label">Psychological age</span>
+          <strong>{{ analytics.psychologicalAge }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <div class="profile-sections">
+      <section class="profile-card">
+        <div class="profile-card__header">
+          <h2>Account details</h2>
+          <button type="button" class="profile-card__toggle" (click)="toggleProfileForm()">
+            {{ isProfileFormOpen ? 'Close' : 'Edit details' }}
+          </button>
+        </div>
+
+        @if (isProfileFormOpen) {
+          <form class="profile-form" [formGroup]="profileForm">
+            <label>
+              Username
+              <input type="text" formControlName="username" />
+            </label>
+
+            <label>
+              Email
+              <input type="email" formControlName="email" />
+            </label>
+
+            <button type="button" (click)="saveProfileDetails()">Save changes</button>
+          </form>
+        }
+      </section>
+
+      <section class="profile-card">
+        <div class="profile-card__header">
+          <h2>Security</h2>
+          <button type="button" class="profile-card__toggle" (click)="togglePasswordForm()">
+            {{ isPasswordFormOpen ? 'Close' : 'Change password' }}
+          </button>
+        </div>
+
+        @if (isPasswordFormOpen) {
+          <form class="profile-form" [formGroup]="passwordForm">
+            <label>
+              Current password
+              <input type="password" formControlName="currentPassword" />
+            </label>
+
+            <label>
+              New password
+              <input type="password" formControlName="newPassword" />
+            </label>
+
+            <label>
+              Confirm new password
+              <input type="password" formControlName="confirmPassword" />
+            </label>
+
+            @if (passwordMessage) {
+              <p class="profile-feedback" [class.profile-feedback--error]="passwordMessage !== 'Password changed.'">
+                {{ passwordMessage }}
+              </p>
+            }
+
+            <button type="button" (click)="changePassword()">Change password</button>
+          </form>
+        }
+      </section>
     </div>
   }
 </section>

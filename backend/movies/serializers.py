@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Movie, Genre
-from .tmdb import TmdbClient, extract_age_rating, extract_release_year
+from .tmdb import TmdbClient, extract_age_rating, extract_country, extract_duration_minutes, extract_release_year
 
 class GenreSerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,6 +17,7 @@ class MovieListSerializer(serializers.ModelSerializer):
             'title',
             'original_title',
             'release_year',
+            'duration_minutes',
             'poster_url',
             'country',
             'age_rating',
@@ -33,6 +34,7 @@ class MovieDetailSerializer(serializers.ModelSerializer):
 
 class TmdbMovieListSerializer(serializers.Serializer):
     id = serializers.IntegerField()
+    media_type = serializers.CharField()
     title = serializers.CharField()
     original_title = serializers.CharField(allow_blank=True)
     release_year = serializers.SerializerMethodField()
@@ -61,11 +63,13 @@ class TmdbMovieListSerializer(serializers.Serializer):
 
 class TmdbMovieDetailSerializer(serializers.Serializer):
     id = serializers.IntegerField()
+    media_type = serializers.CharField()
     title = serializers.CharField()
     original_title = serializers.CharField(allow_blank=True)
     description = serializers.CharField(source='overview', allow_blank=True)
     release_year = serializers.SerializerMethodField()
-    duration_minutes = serializers.IntegerField(source='runtime')
+    duration_minutes = serializers.SerializerMethodField()
+    total_episodes = serializers.SerializerMethodField()
     poster_url = serializers.SerializerMethodField()
     background_url = serializers.SerializerMethodField()
     country = serializers.SerializerMethodField()
@@ -77,6 +81,12 @@ class TmdbMovieDetailSerializer(serializers.Serializer):
     def get_release_year(self, obj):
         return extract_release_year(obj.get('release_date'))
 
+    def get_duration_minutes(self, obj):
+        return extract_duration_minutes(obj)
+
+    def get_total_episodes(self, obj):
+        return obj.get('number_of_episodes') or 0
+
     def get_poster_url(self, obj):
         return TmdbClient().image_url(obj.get('poster_path'))
 
@@ -84,8 +94,7 @@ class TmdbMovieDetailSerializer(serializers.Serializer):
         return TmdbClient().image_url(obj.get('backdrop_path'))
 
     def get_country(self, obj):
-        countries = obj.get('production_countries') or []
-        return countries[0]['name'] if countries else ''
+        return extract_country(obj)
 
     def get_age_rating(self, obj):
         return extract_age_rating(obj)

@@ -23,6 +23,12 @@ interface LibraryViewModel {
 export class MyLibraryComponent {
   private watchlistService = inject(WatchlistService);
   private readonly selectedStatus$ = new BehaviorSubject<UserMovieStatus | ''>('');
+  readonly statusOptions: Array<{ value: UserMovieStatus; label: string }> = [
+    { value: 'planned', label: 'Planned' },
+    { value: 'currently_watching', label: 'Currently watching' },
+    { value: 'watched', label: 'Watched' },
+    { value: 'abandoned', label: 'Abandoned' },
+  ];
 
   selectedStatus: UserMovieStatus | '' = '';
 
@@ -43,7 +49,7 @@ export class MyLibraryComponent {
           of({
             items: [] as UserMovie[],
             isLoading: false,
-            error: 'Failed to load your library.',
+            error: 'Failed to load your list.',
           }),
         ),
       ),
@@ -65,14 +71,20 @@ export class MyLibraryComponent {
 
   getMoodLabel(mood: UserMovie['mood']): string {
     const moodLabels: Record<string, string> = {
+      bored: 'Bored',
+      scared: 'Scared',
       excited: 'Excited',
       thoughtful: 'Thoughtful',
+      calm: 'Calm',
       comforted: 'Calm',
       tense: 'Tense',
       sad: 'Sad',
-      inspired: 'Inspired',
     };
 
     return mood ? moodLabels[mood] ?? mood : '';
+  }
+
+  getStatusLabel(status: UserMovieStatus): string {
+    return this.statusOptions.find((option) => option.value === status)?.label ?? status;
   }
 }
