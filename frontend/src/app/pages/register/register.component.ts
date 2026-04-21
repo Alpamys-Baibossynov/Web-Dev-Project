@@ -39,7 +39,7 @@ export class RegisterComponent {
         this.router.navigateByUrl('/my-list');
       },
       error: () => {
-        this.error = 'Registration failed. Please check the form.';
+        this.error = 'Registration failed, please check the form';
         this.isSubmitting = false;
       },
     });

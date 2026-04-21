@@ -118,7 +118,7 @@ class ChangePasswordSerializer(serializers.Serializer):
     def validate_current_password(self, value):
         user = self.context['request'].user
         if not user.check_password(value):
-            raise serializers.ValidationError('Current password is incorrect.')
+            raise serializers.ValidationError('Current password is incorrect')
         return value
 
     def save(self, **kwargs):

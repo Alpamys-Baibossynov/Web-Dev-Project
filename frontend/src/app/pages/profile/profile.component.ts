@@ -1,9 +1,9 @@
-import { CommonModule } from '@angular/common';
+import { AsyncPipe, CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { forkJoin, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { BehaviorSubject, forkJoin, of } from 'rxjs';
+import { catchError, map, startWith, switchMap } from 'rxjs/operators';
 
 import { MovieDetail } from '../../models/movie-detail.interface';
 import { User } from '../../models/user.interface';
@@ -14,7 +14,7 @@ import { UserMovie } from '../../models/user-movie.interface';
 
 @Component({
   selector: 'app-profile',
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, AsyncPipe],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.css',
 })
@@ -38,12 +38,14 @@ export class ProfileComponent implements OnInit {
   profileMessage: string | null = null;
   passwordMessage: string | null = null;
   userSearch = '';
-  searchMessage: string | null = null;
-  isSearchingUsers = false;
+  isUserSearchOpen = false;
   isFollowSubmitting = false;
-  foundUsers: User[] = [];
+  private readonly userSearch$ = new BehaviorSubject<string>('');
+  private readonly relationshipsTab$ = new BehaviorSubject<'followers' | 'following'>('followers');
   isProfileFormOpen = false;
   isPasswordFormOpen = false;
+  followersCount = 0;
+  followingCount = 0;
   libraryStats = {
     total: 0,
     watched: 0,
@@ -64,6 +66,77 @@ export class ProfileComponent implements OnInit {
     return detail !== null;
   }
 
+  readonly userSearchViewModel$ = this.userSearch$.pipe(
+    switchMap((search) => {
+      const trimmedSearch = search.trim();
+      if (!trimmedSearch) {
+        return of({
+          users: [] as User[],
+          isLoading: false,
+          message: null as string | null,
+        });
+      }
+
+      return this.authService.searchUsers(trimmedSearch).pipe(
+        map((users) => {
+          const filteredUsers = users.filter((user) => user.id !== this.authService.currentUser()?.id);
+          return {
+            users: filteredUsers,
+            isLoading: false,
+            message: filteredUsers.length ? null : 'No users found',
+          };
+        }),
+        startWith({
+          users: [] as User[],
+          isLoading: true,
+          message: null as string | null,
+        }),
+        catchError(() =>
+          of({
+            users: [] as User[],
+            isLoading: false,
+            message: 'Could not search users right now',
+          }),
+        ),
+      );
+    }),
+  );
+
+  readonly relationshipsViewModel$ = this.relationshipsTab$.pipe(
+    switchMap((tab) => {
+      const request$ = tab === 'followers'
+        ? this.authService.getFollowers()
+        : this.authService.getFollowing();
+
+      return request$.pipe(
+        map((users) => ({
+          tab,
+          users,
+          isLoading: false,
+          message: users.length
+            ? null
+            : tab === 'followers'
+              ? 'No followers yet'
+              : 'No following yet',
+        })),
+        startWith({
+          tab,
+          users: [] as User[],
+          isLoading: true,
+          message: null as string | null,
+        }),
+        catchError(() =>
+          of({
+            tab,
+            users: [] as User[],
+            isLoading: false,
+            message: 'Could not load this list right now',
+          }),
+        ),
+      );
+    }),
+  );
+
   readonly profileForm = this.formBuilder.nonNullable.group({
     username: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
@@ -76,13 +149,8 @@ export class ProfileComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    const user = this.authService.currentUser();
-    if (user) {
-      this.profileForm.patchValue({
-        username: user.username,
-        email: user.email,
-      });
-    }
+    this.refreshCurrentUserProfile();
+    this.refreshRelationshipCounts();
 
     this.watchlistService.getLibrary().subscribe({
       next: (response) => {
@@ -122,14 +190,14 @@ export class ProfileComponent implements OnInit {
     }
 
     if (!file.type.startsWith('image/')) {
-      this.uploadError = 'Choose an image file.';
+      this.uploadError = 'Choose an image file';
       input.value = '';
       return;
     }
 
     const maxSizeBytes = 2 * 1024 * 1024;
     if (file.size > maxSizeBytes) {
-      this.uploadError = 'Image should be smaller than 2 MB.';
+      this.uploadError = 'Image should be smaller than 2 MB';
       input.value = '';
       return;
     }
@@ -138,7 +206,7 @@ export class ProfileComponent implements OnInit {
     reader.onload = () => {
       const result = reader.result;
       if (typeof result !== 'string') {
-        this.uploadError = 'Could not read that image.';
+        this.uploadError = 'Could not read that image';
         return;
       }
 
@@ -146,17 +214,17 @@ export class ProfileComponent implements OnInit {
         next: () => {
           this.imageLoadFailed = false;
           this.uploadError = null;
-          this.profileMessage = 'Profile picture updated.';
+          this.profileMessage = 'Profile picture updated';
           input.value = '';
         },
         error: () => {
-          this.uploadError = 'Could not save that image right now.';
+          this.uploadError = 'Could not save that image right now';
           input.value = '';
         },
       });
     };
     reader.onerror = () => {
-      this.uploadError = 'Could not read that image.';
+      this.uploadError = 'Could not read that image';
       input.value = '';
     };
     reader.readAsDataURL(file);
@@ -164,6 +232,10 @@ export class ProfileComponent implements OnInit {
 
   getUserInitials(username: string): string {
     return username.slice(0, 2).toUpperCase();
+  }
+
+  getFollowersLabel(count: number): string {
+    return count === 1 ? 'follower' : 'followers';
   }
 
   saveProfileDetails(): void {
@@ -178,10 +250,10 @@ export class ProfileComponent implements OnInit {
           username: user.username,
           email: user.email,
         });
-        this.profileMessage = 'Profile updated.';
+        this.profileMessage = 'Profile updated';
       },
       error: () => {
-        this.profileMessage = 'Could not update profile right now.';
+        this.profileMessage = 'Could not update profile right now';
       },
     });
   }
@@ -206,13 +278,13 @@ export class ProfileComponent implements OnInit {
 
     const { currentPassword, newPassword, confirmPassword } = this.passwordForm.getRawValue();
     if (newPassword !== confirmPassword) {
-      this.passwordMessage = 'New passwords do not match.';
+      this.passwordMessage = 'New passwords do not match';
       return;
     }
 
     this.authService.changePassword({ currentPassword, newPassword }).subscribe({
       next: (result) => {
-        this.passwordMessage = result.success ? 'Password changed.' : result.error ?? 'Could not change password.';
+        this.passwordMessage = result.success ? 'Password changed' : result.error ?? 'Could not change password';
 
         if (result.success) {
           this.passwordForm.reset({
@@ -223,33 +295,35 @@ export class ProfileComponent implements OnInit {
         }
       },
       error: () => {
-        this.passwordMessage = 'Could not change password.';
+        this.passwordMessage = 'Could not change password';
       },
     });
   }
 
   searchForUsers(): void {
-    const trimmedSearch = this.userSearch.trim();
-    if (!trimmedSearch) {
-      this.foundUsers = [];
-      this.searchMessage = null;
-      return;
-    }
+    this.userSearch$.next(this.userSearch);
+  }
 
-    this.isSearchingUsers = true;
-    this.searchMessage = null;
-    this.authService.searchUsers(trimmedSearch).subscribe({
-      next: (users) => {
-        this.foundUsers = users.filter((user) => user.id !== this.authService.currentUser()?.id);
-        this.searchMessage = this.foundUsers.length ? null : 'No users found.';
-        this.isSearchingUsers = false;
-      },
-      error: () => {
-        this.foundUsers = [];
-        this.searchMessage = 'Could not search users right now.';
-        this.isSearchingUsers = false;
-      },
-    });
+  onUserSearchInput(value: string): void {
+    this.userSearch = value;
+    this.userSearch$.next(value);
+  }
+
+  toggleUserSearch(): void {
+    this.isUserSearchOpen = !this.isUserSearchOpen;
+
+    if (!this.isUserSearchOpen) {
+      this.userSearch = '';
+      this.userSearch$.next('');
+    }
+  }
+
+  selectRelationshipsTab(tab: 'followers' | 'following'): void {
+    this.relationshipsTab$.next(tab);
+  }
+
+  isRelationshipsTabActive(tab: 'followers' | 'following'): boolean {
+    return this.relationshipsTab$.value === tab;
   }
 
   toggleFollowUser(user: User): void {
@@ -263,10 +337,11 @@ export class ProfileComponent implements OnInit {
       : this.authService.followUser(user.username);
 
     request$.subscribe({
-      next: (updatedUser) => {
-        this.foundUsers = this.foundUsers.map((candidate) =>
-          candidate.username === updatedUser.username ? updatedUser : candidate,
-        );
+      next: () => {
+        this.refreshCurrentUserProfile();
+        this.refreshRelationshipCounts();
+        this.userSearch$.next(this.userSearch);
+        this.relationshipsTab$.next(this.relationshipsTab$.value);
         this.isFollowSubmitting = false;
       },
       error: () => {
@@ -280,6 +355,16 @@ export class ProfileComponent implements OnInit {
       return 'Friend';
     }
     return user.is_following ? 'Following' : 'Follow';
+  }
+
+  getRelationshipClass(user: User): string {
+    if (user.is_friend) {
+      return 'people-card__action people-card__action--friend';
+    }
+    if (user.is_following) {
+      return 'people-card__action people-card__action--following';
+    }
+    return 'people-card__action people-card__action--follow';
   }
 
   private enrichItemsForAnalytics(items: UserMovie[]) {
@@ -340,6 +425,33 @@ export class ProfileComponent implements OnInit {
         });
       }),
     );
+  }
+
+  private refreshCurrentUserProfile(): void {
+    this.authService.fetchCurrentUser().subscribe({
+      next: (user) => {
+        if (!user) {
+          return;
+        }
+
+        this.profileForm.patchValue({
+          username: user.username,
+          email: user.email,
+        });
+      },
+    });
+  }
+
+  private refreshRelationshipCounts(): void {
+    forkJoin({
+      followers: this.authService.getFollowers().pipe(catchError(() => of([] as User[]))),
+      following: this.authService.getFollowing().pipe(catchError(() => of([] as User[]))),
+    }).subscribe({
+      next: ({ followers, following }) => {
+        this.followersCount = followers.length;
+        this.followingCount = following.length;
+      },
+    });
   }
 
   private buildAnalytics(items: UserMovie[]): {

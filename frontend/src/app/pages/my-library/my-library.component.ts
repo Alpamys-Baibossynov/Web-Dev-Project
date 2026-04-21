@@ -49,7 +49,7 @@ export class MyLibraryComponent {
           of({
             items: [] as UserMovie[],
             isLoading: false,
-            error: 'Failed to load your list.',
+            error: 'Failed to load your list',
           }),
         ),
       ),

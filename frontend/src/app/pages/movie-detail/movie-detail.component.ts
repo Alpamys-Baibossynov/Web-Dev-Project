@@ -196,7 +196,7 @@ export class MovieDetailComponent {
         this.isSubmitting = false;
       },
       error: () => {
-        this.saveMessage = 'Could not save this title right now.';
+        this.saveMessage = 'Could not save this title right now';
         this.isSubmitting = false;
       },
     });
@@ -221,7 +221,7 @@ export class MovieDetailComponent {
         this.isSubmitting = false;
       },
       error: () => {
-        this.saveMessage = 'Could not save this title right now.';
+        this.saveMessage = 'Could not save this title right now';
         this.isSubmitting = false;
       },
     });

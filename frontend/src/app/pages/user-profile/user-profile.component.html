@@ -3,8 +3,9 @@
     @if (vm.isLoading) {
       <div class="state-card">Loading profile...</div>
     } @else if (vm.error || !vm.profile) {
-      <div class="state-card state-card--error">{{ vm.error ?? 'User not found.' }}</div>
+      <div class="state-card state-card--error">{{ vm.error ?? 'User not found' }}</div>
     } @else {
+      @let stats = getLibraryStats(vm.items);
       <div class="profile-cover"></div>
 
       <div class="profile-header">
@@ -24,11 +25,29 @@
 
         <div class="profile-header__identity">
           <h1>{{ vm.profile.username }}</h1>
-          <p>{{ vm.profile.followers_count ?? 0 }} followers • {{ vm.profile.following_count ?? 0 }} following</p>
+          @if (!isOwnProfile(vm.profile) && vm.tasteMatch !== null) {
+            <p class="public-profile__match">{{ getTasteMatchLabel(vm.tasteMatch) }}</p>
+          }
           <div class="profile-stats">
-            <div class="profile-stat">
-              <strong>{{ vm.items.length }}</strong>
-              <span>Saved</span>
+            <div class="profile-stats__row">
+              <div class="profile-stat">
+                <strong>{{ stats.watched }}</strong>
+                <span>Watched</span>
+              </div>
+              <div class="profile-stat">
+                <strong>{{ stats.planned }}</strong>
+                <span>Planned</span>
+              </div>
+            </div>
+            <div class="profile-stats__row">
+              <div class="profile-stat">
+                <strong>{{ vm.profile.followers_count ?? 0 }}</strong>
+                <span>{{ getFollowersLabel(vm.profile.followers_count ?? 0) }}</span>
+              </div>
+              <div class="profile-stat">
+                <strong>{{ vm.profile.following_count ?? 0 }}</strong>
+                <span>Following</span>
+              </div>
             </div>
           </div>
           <div class="public-profile__actions">

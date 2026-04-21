@@ -62,7 +62,7 @@ export class RecommendationsComponent {
           of({
             recommendations: [] as RecommendationItem[],
             isLoading: false,
-            error: 'Failed to build recommendations right now.',
+            error: 'Failed to build recommendations right now',
             profileSummary: null,
             emptyState: null,
           }),

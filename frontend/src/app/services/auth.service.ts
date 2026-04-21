@@ -112,7 +112,7 @@ export class AuthService {
   updateProfileDetails(payload: { username: string; email: string }): Observable<User> {
     const currentUser = this.currentUser();
     if (!currentUser) {
-      return throwError(() => new Error('You need to be logged in.'));
+      return throwError(() => new Error('You need to be logged in'));
     }
 
     return this.http.patch<User>(`${this.apiUrl}/me/`, payload).pipe(
@@ -131,7 +131,7 @@ export class AuthService {
   updateProfilePicture(profilePictureUrl: string): Observable<User> {
     const currentUser = this.currentUser();
     if (!currentUser) {
-      return throwError(() => new Error('You need to be logged in.'));
+      return throwError(() => new Error('You need to be logged in'));
     }
 
     return this.http.patch<User>(`${this.apiUrl}/me/`, { profile_picture_url: profilePictureUrl.trim() }).pipe(
@@ -149,7 +149,7 @@ export class AuthService {
   changePassword(payload: { currentPassword: string; newPassword: string }): Observable<{ success: boolean; error?: string }> {
     const currentUser = this.currentUser();
     if (!currentUser) {
-      return of({ success: false, error: 'You need to be logged in.' });
+      return of({ success: false, error: 'You need to be logged in' });
     }
 
     return this.http.post<AuthResponse>(`${this.apiUrl}/change-password/`, payload).pipe(
@@ -165,7 +165,7 @@ export class AuthService {
       catchError(() => {
         const localUser = this.getStoredUsers().find((candidate) => candidate.username === username);
         if (!localUser) {
-          return throwError(() => new Error('User not found.'));
+          return throwError(() => new Error('User not found'));
         }
         const isOwnProfile = this.currentUser()?.id === localUser.id;
         return of({
@@ -207,6 +207,14 @@ export class AuthService {
     );
   }
 
+  getFollowers(): Observable<User[]> {
+    return this.getRelationshipUsers('followers');
+  }
+
+  getFollowing(): Observable<User[]> {
+    return this.getRelationshipUsers('following');
+  }
+
   followUser(username: string): Observable<User> {
     return this.http.post<User>(`${this.apiUrl}/users/${encodeURIComponent(username)}/follow/`, {}).pipe(
       map((user) => this.mergeStoredUserData(user)),
@@ -214,7 +222,7 @@ export class AuthService {
         const targetUser = this.getStoredUsers().find((candidate) => candidate.username === username);
         const currentUser = this.currentUser();
         if (!targetUser || !currentUser) {
-          return throwError(() => new Error('Could not follow this user.'));
+          return throwError(() => new Error('Could not follow this user'));
         }
         this.setLocalFollowState(currentUser.id, targetUser.id, true);
         return of({
@@ -235,7 +243,7 @@ export class AuthService {
         const targetUser = this.getStoredUsers().find((candidate) => candidate.username === username);
         const currentUser = this.currentUser();
         if (!targetUser || !currentUser) {
-          return throwError(() => new Error('Could not unfollow this user.'));
+          return throwError(() => new Error('Could not unfollow this user'));
         }
         this.setLocalFollowState(currentUser.id, targetUser.id, false);
         return of({
@@ -332,6 +340,7 @@ export class AuthService {
   private normalizeUser(user: User): User {
     return {
       ...user,
+      email: this.normalizeEmail(user.email),
       profile_picture_url: user.profile_picture_url?.trim() || undefined,
       followers_count: user.followers_count ?? 0,
       following_count: user.following_count ?? 0,
@@ -361,12 +370,12 @@ export class AuthService {
     const users = this.getStoredUsers();
     const userIndex = users.findIndex((user) => user.id === userId);
     if (userIndex < 0) {
-      return { success: false, error: 'Could not update password right now.' };
+      return { success: false, error: 'Could not update password right now' };
     }
 
     const storedUser = users[userIndex];
     if (storedUser.password && storedUser.password !== payload.currentPassword) {
-      return { success: false, error: 'Current password is incorrect.' };
+      return { success: false, error: 'Current password is incorrect' };
     }
 
     users[userIndex] = {
@@ -391,6 +400,33 @@ export class AuthService {
       ...normalizedUser,
       profile_picture_url: normalizedUser.profile_picture_url ?? storedUser.profile_picture_url,
     };
+  }
+
+  private getRelationshipUsers(relationship: 'followers' | 'following'): Observable<User[]> {
+    return this.http.get<User[]>(`${this.apiUrl}/me/${relationship}/`).pipe(
+      map((users) => users.map((user) => this.mergeStoredUserData(user))),
+      catchError(() => {
+        const currentUser = this.currentUser();
+        if (!currentUser) {
+          return of([]);
+        }
+
+        const users = this.getStoredUsers()
+          .filter((user) => relationship === 'followers'
+            ? this.getStoredFollows().some((follow) => follow.followerId === user.id && follow.followingId === currentUser.id)
+            : this.getStoredFollows().some((follow) => follow.followerId === currentUser.id && follow.followingId === user.id))
+          .map((user) => ({
+            ...user,
+            email: '',
+            followers_count: this.getFollowerCount(user.id),
+            following_count: this.getFollowingCount(user.id),
+            is_following: this.isUserFollowed(user.id),
+            is_friend: this.isUserFriend(user.id),
+          }));
+
+        return of(users);
+      }),
+    );
   }
 
   private getStoredFollows(): Array<{ followerId: number; followingId: number }> {
@@ -448,7 +484,7 @@ export class AuthService {
       users[userIndex] = {
         ...users[userIndex],
         username: user.username,
-        email: user.email,
+        email: this.normalizeEmail(user.email),
         profile_picture_url: user.profile_picture_url,
         followers_count: user.followers_count,
         following_count: user.following_count,
@@ -460,5 +496,13 @@ export class AuthService {
     }
 
     localStorage.setItem(this.usersKey, JSON.stringify(users));
+  }
+
+  private normalizeEmail(email: string): string {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || trimmedEmail.endsWith('@watchlist.local')) {
+      return '';
+    }
+    return trimmedEmail;
   }
 }

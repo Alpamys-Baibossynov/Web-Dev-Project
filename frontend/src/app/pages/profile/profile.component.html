@@ -30,18 +30,31 @@
 
       <div class="profile-header__identity">
         <h1>{{ user.username }}</h1>
-        <p>{{ user.email || 'No email yet' }}</p>
-        <div class="public-profile__actions">
-          <a class="profile-card__toggle public-profile__link" [routerLink]="['/users', user.username]">View public profile</a>
-        </div>
+        @if (user.email) {
+          <p>{{ user.email }}</p>
+        } @else {
+          <p class="profile-header__warning">Add email</p>
+        }
         <div class="profile-stats">
-          <div class="profile-stat">
-            <strong>{{ libraryStats.watched }}</strong>
-            <span>Watched</span>
+          <div class="profile-stats__row">
+            <div class="profile-stat">
+              <strong>{{ libraryStats.watched }}</strong>
+              <span>Watched</span>
+            </div>
+            <div class="profile-stat">
+              <strong>{{ libraryStats.planned }}</strong>
+              <span>Planned</span>
+            </div>
           </div>
-          <div class="profile-stat">
-            <strong>{{ libraryStats.planned }}</strong>
-            <span>Planned</span>
+          <div class="profile-stats__row">
+            <div class="profile-stat">
+              <strong>{{ followersCount }}</strong>
+              <span>Followers</span>
+            </div>
+            <div class="profile-stat">
+              <strong>{{ followingCount }}</strong>
+              <span>Following</span>
+            </div>
           </div>
         </div>
       </div>
@@ -56,48 +69,115 @@
     }
 
     <section class="profile-card">
-      <div class="profile-card__header">
-        <h2>People</h2>
-      </div>
+      <div class="relationships-toolbar">
+        <div class="relationships-tabs" role="tablist" aria-label="Connections">
+          <button
+            type="button"
+            class="relationships-tabs__button"
+            [class.relationships-tabs__button--active]="isRelationshipsTabActive('followers')"
+            (click)="selectRelationshipsTab('followers')"
+          >
+            Followers
+          </button>
+          <button
+            type="button"
+            class="relationships-tabs__button"
+            [class.relationships-tabs__button--active]="isRelationshipsTabActive('following')"
+            (click)="selectRelationshipsTab('following')"
+          >
+            Following
+          </button>
+        </div>
 
-      <div class="people-search">
-        <label>
-          Search users
-          <input type="text" [value]="userSearch" (input)="userSearch = $any($event.target).value" placeholder="Search by username" />
-        </label>
-        <button type="button" class="profile-card__toggle" (click)="searchForUsers()">
-          Search
+        <button type="button" class="people-search__toggle" (click)="toggleUserSearch()">
+          {{ isUserSearchOpen ? 'Close' : 'Search' }}
         </button>
       </div>
 
-      @if (isSearchingUsers) {
-        <p class="profile-feedback">Searching...</p>
-      } @else if (searchMessage) {
-        <p class="profile-feedback">{{ searchMessage }}</p>
-      } @else if (foundUsers.length) {
-        <div class="people-results">
-          @for (foundUser of foundUsers; track foundUser.id) {
-            <article class="people-card">
-              <a class="people-card__link" [routerLink]="['/users', foundUser.username]">
-                @if (foundUser.profile_picture_url) {
-                  <img class="people-card__avatar" [src]="foundUser.profile_picture_url" [alt]="foundUser.username" />
-                } @else {
-                  <div class="people-card__avatar people-card__avatar--fallback">
-                    {{ getUserInitials(foundUser.username) }}
-                  </div>
-                }
-                <div class="people-card__meta">
-                  <strong>{{ foundUser.username }}</strong>
-                  <span>{{ foundUser.followers_count ?? 0 }} followers</span>
-                </div>
-              </a>
-
-              <button type="button" class="profile-card__toggle" (click)="toggleFollowUser(foundUser)" [disabled]="isFollowSubmitting">
-                {{ getRelationshipLabel(foundUser) }}
-              </button>
-            </article>
-          }
+      @if (isUserSearchOpen) {
+        <div class="people-search">
+          <input
+            type="text"
+            [value]="userSearch"
+            (input)="onUserSearchInput($any($event.target).value)"
+            (keydown.enter)="searchForUsers()"
+            placeholder="Search by username"
+          />
         </div>
+
+        @if (userSearchViewModel$ | async; as userSearchVm) {
+          @if (userSearchVm.isLoading) {
+            <p class="profile-feedback">Searching...</p>
+          } @else if (userSearchVm.message) {
+            <p class="profile-feedback">{{ userSearchVm.message }}</p>
+          } @else if (userSearchVm.users.length) {
+            <div class="people-results">
+              @for (foundUser of userSearchVm.users; track foundUser.id) {
+                <article class="people-card">
+                  <a class="people-card__link" [routerLink]="['/users', foundUser.username]">
+                    @if (foundUser.profile_picture_url) {
+                      <img class="people-card__avatar" [src]="foundUser.profile_picture_url" [alt]="foundUser.username" />
+                    } @else {
+                      <div class="people-card__avatar people-card__avatar--fallback">
+                        {{ getUserInitials(foundUser.username) }}
+                      </div>
+                    }
+                  <div class="people-card__meta">
+                    <strong>{{ foundUser.username }}</strong>
+                    <span>{{ foundUser.followers_count ?? 0 }} {{ getFollowersLabel(foundUser.followers_count ?? 0) }}</span>
+                  </div>
+                </a>
+
+                  <button
+                    type="button"
+                    [class]="getRelationshipClass(foundUser)"
+                    (click)="toggleFollowUser(foundUser)"
+                    [disabled]="isFollowSubmitting"
+                  >
+                    {{ getRelationshipLabel(foundUser) }}
+                  </button>
+                </article>
+              }
+            </div>
+          }
+        }
+      }
+
+      @if (relationshipsViewModel$ | async; as relationshipsVm) {
+        @if (relationshipsVm.isLoading) {
+          <p class="profile-feedback">Loading...</p>
+        } @else if (relationshipsVm.message) {
+          <p class="profile-feedback">{{ relationshipsVm.message }}</p>
+        } @else if (relationshipsVm.users.length) {
+          <div class="people-results">
+            @for (relatedUser of relationshipsVm.users; track relatedUser.id) {
+              <article class="people-card">
+                <a class="people-card__link" [routerLink]="['/users', relatedUser.username]">
+                  @if (relatedUser.profile_picture_url) {
+                    <img class="people-card__avatar" [src]="relatedUser.profile_picture_url" [alt]="relatedUser.username" />
+                  } @else {
+                    <div class="people-card__avatar people-card__avatar--fallback">
+                      {{ getUserInitials(relatedUser.username) }}
+                    </div>
+                  }
+                  <div class="people-card__meta">
+                    <strong>{{ relatedUser.username }}</strong>
+                    <span>{{ relatedUser.followers_count ?? 0 }} {{ getFollowersLabel(relatedUser.followers_count ?? 0) }}</span>
+                  </div>
+                </a>
+
+                <button
+                  type="button"
+                  [class]="getRelationshipClass(relatedUser)"
+                  (click)="toggleFollowUser(relatedUser)"
+                  [disabled]="isFollowSubmitting"
+                >
+                  {{ getRelationshipLabel(relatedUser) }}
+                </button>
+              </article>
+            }
+          </div>
+        }
       }
     </section>
 
@@ -196,7 +276,7 @@
             </label>
 
             @if (passwordMessage) {
-              <p class="profile-feedback" [class.profile-feedback--error]="passwordMessage !== 'Password changed.'">
+              <p class="profile-feedback" [class.profile-feedback--error]="passwordMessage !== 'Password changed'">
                 {{ passwordMessage }}
               </p>
             }

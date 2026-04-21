@@ -70,7 +70,7 @@ class UserMovieSerializer(serializers.ModelSerializer):
             ).exists()
             if duplicate_exists:
                 raise serializers.ValidationError(
-                    {'movie_id': 'This movie is already in your library.'}
+                    {'movie_id': 'This movie is already in your library'}
                 )
 
         status_value = attrs.get('status', getattr(self.instance, 'status', None))

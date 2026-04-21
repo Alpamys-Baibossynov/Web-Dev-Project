@@ -83,7 +83,17 @@
   line-height: 1.35;
 }
 
+.profile-header__identity .profile-header__warning {
+  color: #ef4444;
+  font-weight: 700;
+}
+
 .profile-stats {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.profile-stats__row {
   display: flex;
   flex-wrap: wrap;
   gap: 0.9rem;
@@ -193,17 +203,78 @@
   width: 100%;
 }
 
+.relationships-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
 .people-search {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.8rem;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem;
   align-items: end;
+  margin-top: 0.95rem;
+}
+
+.people-search__toggle {
+  width: auto;
+  min-width: 0;
+  padding: 0.42rem 0.72rem;
+  border-radius: 999px;
+  border-color: rgba(148, 163, 184, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  font-weight: 700;
+  box-shadow: none;
+}
+
+.people-search__toggle:hover {
+  transform: none;
+  box-shadow: none;
+  color: var(--text);
 }
 
 .people-results {
   display: grid;
   gap: 0.75rem;
   margin-top: 1rem;
+}
+
+.relationships-tabs {
+  display: inline-flex;
+  gap: 0.45rem;
+  padding: 0.3rem;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.relationships-tabs__button {
+  width: auto;
+  min-width: 118px;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  box-shadow: none;
+}
+
+.relationships-tabs__button:hover {
+  transform: none;
+  box-shadow: none;
+  color: var(--text);
+}
+
+.relationships-tabs__button--active {
+  border-color: rgba(96, 165, 250, 0.22);
+  background: rgba(96, 165, 250, 0.18);
+  color: var(--text);
 }
 
 .people-card {
@@ -253,6 +324,36 @@
 .people-card__meta span {
   color: var(--text-muted);
   font-size: 0.84rem;
+}
+
+.people-card__action {
+  width: auto;
+  min-width: 132px;
+  padding: 0.45rem 0.78rem;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  box-shadow: none;
+}
+
+.people-card__action:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.people-card__action--follow {
+  color: #0f172a;
+}
+
+.people-card__action--following {
+  border-color: rgba(148, 163, 184, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-soft);
+}
+
+.people-card__action--friend {
+  border-color: rgba(34, 197, 94, 0.2);
+  background: rgba(34, 197, 94, 0.12);
+  color: #bbf7d0;
 }
 
 .analytics-grid {
@@ -321,8 +422,26 @@
     width: 100%;
   }
 
+  .profile-stats__row {
+    width: 100%;
+  }
+
   .people-search {
     grid-template-columns: 1fr;
+  }
+
+  .relationships-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .relationships-tabs {
+    width: 100%;
+  }
+
+  .relationships-tabs__button {
+    flex: 1;
+    min-width: 0;
   }
 
   .people-card {

@@ -38,7 +38,7 @@ export class LoginComponent {
         this.router.navigateByUrl('/my-list');
       },
       error: () => {
-        this.error = 'Login failed. Check your username and password.';
+        this.error = 'Login failed, check your username and password';
         this.isSubmitting = false;
       },
     });

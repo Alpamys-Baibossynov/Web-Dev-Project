@@ -44,7 +44,7 @@ class LoginAPIView(APIView):
         )
         if user is None:
             return Response(
-                {'detail': 'Invalid credentials.'},
+                {'detail': 'Invalid credentials'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -120,6 +120,22 @@ class PublicUserListAPIView(generics.ListAPIView):
         return context
 
 
+class FollowListAPIView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UserSerializer
+
+    def get_queryset(self):
+        relationship = self.kwargs['relationship']
+        if relationship == 'followers':
+            return User.objects.filter(following_links__following=self.request.user).order_by('username')
+        return User.objects.filter(follower_links__follower=self.request.user).order_by('username')
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
+
 class UserFollowAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -127,7 +143,7 @@ class UserFollowAPIView(APIView):
         user_to_follow = generics.get_object_or_404(User, username=username)
         if user_to_follow == request.user:
             return Response(
-                {'detail': 'You cannot follow yourself.'},
+                {'detail': 'You cannot follow yourself'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
